@@ -76,7 +76,8 @@ export class CameraSystem {
    * @param scene  The Phaser.Scene to scroll
    */
   applyToPhaser(scene: Phaser.Scene): void {
-    scene.cameras.main.setScroll(this.cameraX * SCALE, 0);
+    // cameraX is in logical pixels; zoom(SCALE) handles canvas scaling
+    scene.cameras.main.setScroll(this.cameraX, 0);
   }
 
   /**

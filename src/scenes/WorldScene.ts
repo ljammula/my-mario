@@ -23,6 +23,7 @@ import { GameStateMachine, GameStateMachineCallbacks } from '../systems/GameStat
 import { TileRenderer } from '../systems/TileRenderer';
 import * as SpriteRegistry from '../systems/SpriteRegistry';
 import { audioSystem, MusicTrack, SFXKey } from '../systems/AudioSystem';
+import { WORLD_1_1 } from '../data/levels/world1-1';
 import {
   isStomping,
   isSideHit,
@@ -43,6 +44,7 @@ import {
   LEVEL_ROWS,
   SCALE,
   SCORE,
+  POOL_ENEMIES,
 } from '../config/constants';
 import { Screen } from '../types/entities';
 import { TileGrid, LevelData, EnemyDef } from '../types/level';
@@ -73,6 +75,10 @@ export class WorldScene extends Phaser.Scene {
   // ── TileRenderer (SE2) ─────────────────────────────────────────────────────
   private tileRenderer!: TileRenderer;
 
+  // ── Entity sprites (Phaser Images, pre-allocated) ──────────────────────────
+  private marioImage!:   Phaser.GameObjects.Image;
+  private enemyImages:   Phaser.GameObjects.Image[] = [];
+
   // ── Block shake animation tracking (pre-allocated pool, max 8 simultaneous) ─
   private readonly _shakePool: Array<{ col: number; row: number; timer: number; offsetY: number }> =
     Array.from({ length: 8 }, () => ({ col: 0, row: 0, timer: 0, offsetY: 0 }));
@@ -88,8 +94,7 @@ export class WorldScene extends Phaser.Scene {
 
   create(): void {
     // Load World 1-1 level data
-    // SE2 will provide the level data module; for now we create a minimal grid.
-    this.level = this._buildLevel();
+    this.level = WORLD_1_1;
     this.grid  = this.level.grid;
 
     // Initialize systems
@@ -98,7 +103,7 @@ export class WorldScene extends Phaser.Scene {
 
     const callbacks: GameStateMachineCallbacks = {
       onHurryMode:     () => { audioSystem.setHurryMode(true); },
-      onLivesLost:     () => { /* death jingle already triggered at death point */ },
+      onLivesLost:     () => { /* death jingle triggered at death point */ },
       onGameOver:      () => { /* game over music handled by screen transition */ },
       onLevelComplete: (_timeBonus: number) => { audioSystem.playSFX('level_complete' as SFXKey); },
       onExtraLife:     () => { audioSystem.playSFX('oneup' as SFXKey); },
@@ -112,17 +117,30 @@ export class WorldScene extends Phaser.Scene {
     // Spawn enemies from level data
     this._spawnEnemies(this.level.enemies);
 
-    // Phaser camera: set world bounds
-    this.cameras.main.setBounds(0, 0, this.level.widthPx * SCALE, this.level.heightPx * SCALE);
-
-    // Set background color
+    // Phaser camera: zoom 2× so all game objects can use logical (NES) coordinates
+    this.cameras.main.setZoom(SCALE);
+    this.cameras.main.setBounds(0, 0, this.level.widthPx, this.level.heightPx);
     this.cameras.main.setBackgroundColor(this.level.bgColor);
 
-    // Initialize tile renderer (SE2)
+    // Initialize tile renderer
     this.tileRenderer = new TileRenderer(this, SpriteRegistry);
     this.tileRenderer.buildFromGrid(this.grid);
 
-    // Wire audio on first user interaction via keyboard input listener
+    // Mario sprite (logical coordinates; zoom handles 2× upscale)
+    this.marioImage = this.add.image(this.mario.x, this.mario.y, 'mario_small_stand');
+    this.marioImage.setOrigin(0, 0);
+    this.marioImage.setDepth(10);
+
+    // Pre-allocate enemy image pool
+    for (let i = 0; i < POOL_ENEMIES; i++) {
+      const img = this.add.image(0, 0, 'goomba_walk1');
+      img.setOrigin(0, 0);
+      img.setDepth(9);
+      img.setVisible(false);
+      this.enemyImages.push(img);
+    }
+
+    // Wire audio on first user interaction
     this.input.keyboard?.once('keydown', () => {
       audioSystem.init();
       audioSystem.playMusic('overworld' as MusicTrack);
@@ -145,6 +163,10 @@ export class WorldScene extends Phaser.Scene {
 
     // Update tile renderer each display frame (not per physics step)
     this.tileRenderer.update(this.camera.cameraX);
+
+    // Render entities each display frame
+    this._renderMario();
+    this._renderEnemies();
   }
 
   // ── Physics Step ──────────────────────────────────────────────────────────
@@ -318,6 +340,50 @@ export class WorldScene extends Phaser.Scene {
     this._updateShakeBlocks();
   }
 
+  // ── Entity Rendering ──────────────────────────────────────────────────────
+
+  private _renderMario(): void {
+    if (!this.mario.flickerVisible) {
+      this.marioImage.setVisible(false);
+      return;
+    }
+    this.marioImage.setVisible(true);
+
+    const key = this.mario.getSpriteKey();
+    if (SpriteRegistry.hasTexture(key)) {
+      this.marioImage.setTexture(key);
+    }
+
+    // Flip horizontally when facing left
+    this.marioImage.setFlipX(this.mario.facing < 0);
+
+    // Position: logical world coords; Phaser zoom handles 2× upscale
+    this.marioImage.setPosition(this.mario.x, this.mario.y);
+  }
+
+  private _renderEnemies(): void {
+    // Hide all pool slots first
+    for (let i = 0; i < this.enemyImages.length; i++) {
+      this.enemyImages[i].setVisible(false);
+    }
+
+    let slot = 0;
+    for (let i = 0; i < this.enemies.length && slot < this.enemyImages.length; i++) {
+      const enemy = this.enemies[i];
+      if (!enemy.alive || !enemy.active) continue;
+
+      const key = (enemy as { getSpriteKey?(): string }).getSpriteKey?.() ?? 'goomba_walk1';
+      const img = this.enemyImages[slot++];
+
+      if (SpriteRegistry.hasTexture(key)) {
+        img.setTexture(key);
+      }
+      img.setFlipX(enemy.facing > 0);
+      img.setPosition(enemy.x, enemy.y);
+      img.setVisible(true);
+    }
+  }
+
   // ── Block Interaction ─────────────────────────────────────────────────────
 
   private _handleBlockBonk(col: number, row: number): void {
@@ -402,6 +468,7 @@ export class WorldScene extends Phaser.Scene {
     hudData.time   = Math.max(0, Math.floor(gs.time));
     hudData.lives  = gs.lives;
     hudData.hurry  = gs.hurryMode;
+    hudData.screen = gs.screen;
   }
 
   // ── Enemy Spawning ────────────────────────────────────────────────────────
