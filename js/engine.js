@@ -1015,6 +1015,11 @@ function _renderGame() {
   ctx.fillStyle = COLOR.SKY;
   ctx.fillRect(0, HUD.HEIGHT_C, CANVAS_WIDTH, CANVAS_HEIGHT - HUD.HEIGHT_C);
 
+  // Sync renderer's global frame counter for animated tiles (question blocks, etc.)
+  if (renderer && renderer.setGlobalFrame) {
+    renderer.setGlobalFrame(gameState.frameCount);
+  }
+
   if (renderer && renderer.drawTiles) {
     renderer.drawTiles(ctx, grid, camera, SCALE, _shakenTiles);
   } else {

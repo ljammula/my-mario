@@ -405,26 +405,84 @@ export function drawEnemy(ctx, enemy, cameraX, scale) {
   const s = scale;
   const ex = (enemy.x - cameraX) * s;
   const ey = enemy.y * s;
-  const ew = enemy.width * s;
-  const eh = enemy.height * s;
+  // Support both .w/.h (engine plain objects) and .width/.height (class instances)
+  const ew = (enemy.w !== undefined ? enemy.w : enemy.width) * s;
+  const eh = (enemy.h !== undefined ? enemy.h : enemy.height) * s;
 
-  if (enemy.dead) return;
+  if (!enemy.alive && !enemy.dying) return;
 
-  const type = enemy.constructor.name;
+  // Support both .type (engine plain objects) and constructor.name (class instances)
+  const type = enemy.type || enemy.constructor.name.toLowerCase();
 
-  if (type === 'Goomba') {
+  if (type === 'goomba' || type === 'Goomba') {
     drawGoomba(ctx, enemy, ex, ey, ew, eh, s);
-  } else if (type === 'KoopaTroopa') {
+  } else if (type === 'koopa' || type === 'KoopaTroopa') {
     drawKoopa(ctx, enemy, ex, ey, ew, eh, s);
-  } else if (type === 'PiranhaPlant') {
+  } else if (type === 'piranha' || type === 'PiranhaPlant') {
     drawPiranhaPlant(ctx, enemy, cameraX, s);
-  } else if (type === 'Shell') {
+  } else if (type === 'shell' || type === 'Shell') {
     drawShell(ctx, enemy, ex, ey, ew, eh, s);
   }
 }
 
+// ── Collection drawing functions called by engine.js ─────────────────────────
+
+export function drawEnemies(ctx, enemies, camera, scale) {
+  for (const enemy of enemies) {
+    if (!enemy.alive && !enemy.dying) continue;
+    // Cull enemies outside the visible screen
+    const ex = (enemy.x - camera.x) * scale;
+    const ew = (enemy.w !== undefined ? enemy.w : enemy.width) * scale;
+    if (ex + ew < 0 || ex > ctx.canvas.width) continue;
+    drawEnemy(ctx, enemy, camera.x, scale);
+  }
+}
+
+export function drawItems(ctx, items, camera, scale) {
+  for (const item of items) {
+    if (!item.alive) continue;
+    const ix = (item.x - camera.x) * scale;
+    const iw = (item.w !== undefined ? item.w : item.width) * scale;
+    if (ix + iw < 0 || ix > ctx.canvas.width) continue;
+    drawItem(ctx, item, camera.x, scale);
+  }
+}
+
+export function drawTiles(ctx, grid, camera, scale, shakenTiles) {
+  const tileSize = TILE_SIZE;
+  const s = scale;
+  const ts = tileSize * s;
+  const startCol = Math.max(0, Math.floor(camera.x / tileSize));
+  const endCol   = Math.min(LEVEL_COLS - 1, startCol + Math.ceil(ctx.canvas.width / ts) + 1);
+
+  // Build a set of shaken tile keys for quick lookup
+  const shakenSet = new Set();
+  if (shakenTiles) {
+    for (const st of shakenTiles) {
+      shakenSet.add(`${st.col},${st.row}`);
+    }
+  }
+
+  for (let row = 0; row < LEVEL_ROWS; row++) {
+    for (let col = startCol; col <= endCol; col++) {
+      const tileId = (grid[row] && grid[row][col]) ? grid[row][col] : getTile(col, row);
+      if (!tileId || tileId === '.') continue;
+
+      let cx = (col * tileSize - camera.x) * s;
+      let cy = row * tileSize * s;
+
+      // Shake offset
+      if (shakenSet.has(`${col},${row}`)) {
+        cy -= 2 * s;
+      }
+
+      drawTile(ctx, tileId, cx, cy, s);
+    }
+  }
+}
+
 function drawGoomba(ctx, enemy, ex, ey, ew, eh, s) {
-  if (enemy.state === 'stomped') {
+  if (enemy.squished || enemy.state === 'stomped') {
     // Flat squished goomba
     rect(ctx, ex, ey + eh * 0.6, ew, eh * 0.4, COLOR.GOOMBA_BROWN);
     // Eyes still visible
@@ -433,7 +491,7 @@ function drawGoomba(ctx, enemy, ex, ey, ew, eh, s) {
     return;
   }
 
-  const flipped = enemy.state === 'flipped';
+  const flipped = enemy.flipped || enemy.state === 'flipped';
 
   ctx.save();
   if (flipped) {
@@ -458,7 +516,7 @@ function drawGoomba(ctx, enemy, ex, ey, ew, eh, s) {
   rect(ctx, ex + ew * 0.2, ey + eh * 0.25, ew * 0.1, ew * 0.1, '#000000');
   rect(ctx, ex + ew * 0.7, ey + eh * 0.25, ew * 0.1, ew * 0.1, '#000000');
   // Feet (alternating walk frames)
-  const walkAnim = enemy.animFrame % 2;
+  const walkAnim = (enemy.walkFrame !== undefined ? enemy.walkFrame : (enemy.animFrame || 0)) % 2;
   const footW = ew * 0.35;
   const footH = eh * 0.2;
   if (walkAnim === 0) {
@@ -477,7 +535,8 @@ function drawKoopa(ctx, enemy, ex, ey, ew, eh, s) {
 
   if (state === 'shell' || state === 'sliding') {
     // Shell sprite (1x1 tile)
-    drawShellSprite(ctx, ex, ey, ew, eh, enemy.animFrame, state === 'sliding');
+    const frame = enemy.walkFrame !== undefined ? enemy.walkFrame : (enemy.animFrame || 0);
+    drawShellSprite(ctx, ex, ey, ew, eh, frame, state === 'sliding');
     return;
   }
 
@@ -501,7 +560,7 @@ function drawKoopa(ctx, enemy, ex, ey, ew, eh, s) {
   // Feet
   const fW = ew * 0.3;
   const fH = eh * 0.15;
-  const walkAnim = enemy.animFrame % 2;
+  const walkAnim = (enemy.walkFrame !== undefined ? enemy.walkFrame : (enemy.animFrame || 0)) % 2;
   if (walkAnim === 0) {
     rect(ctx, ex, ey + eh - fH, fW, fH, COLOR.KOOPA_SKIN);
     rect(ctx, ex + ew - fW, ey + eh - fH * 0.7, fW, fH * 0.7, COLOR.KOOPA_SKIN);
@@ -542,11 +601,11 @@ function drawShellSprite(ctx, ex, ey, ew, eh, frame, sliding) {
 }
 
 function drawPiranhaPlant(ctx, enemy, cameraX, s) {
-  if (enemy.dead) return;
+  if (!enemy.alive && !enemy.dying) return;
   const ex = (enemy.x - cameraX) * s;
   const ey = enemy.y * s;
-  const ew = enemy.width * s;
-  const eh = enemy.height * s;
+  const ew = (enemy.w !== undefined ? enemy.w : enemy.width) * s;
+  const eh = (enemy.h !== undefined ? enemy.h : enemy.height) * s;
 
   // Stem
   const stemW = ew * 0.3;
@@ -570,31 +629,35 @@ function drawPiranhaPlant(ctx, enemy, cameraX, s) {
 }
 
 function drawShell(ctx, enemy, ex, ey, ew, eh, s) {
-  drawShellSprite(ctx, ex, ey, ew, eh, enemy.animFrame, true);
+  const frame = enemy.walkFrame !== undefined ? enemy.walkFrame : (enemy.animFrame || 0);
+  drawShellSprite(ctx, ex, ey, ew, eh, frame, true);
 }
 
 // ── Item drawing ──────────────────────────────────────────────────────────────
 
 export function drawItem(ctx, item, cameraX, scale) {
-  if (item.dead) return;
+  if (!item.alive) return;
   const s = scale;
   const ix = (item.x - cameraX) * s;
   const iy = item.y * s;
-  const iw = item.width * s;
-  const ih = item.height * s;
+  const iw = (item.w !== undefined ? item.w : item.width) * s;
+  const ih = (item.h !== undefined ? item.h : item.height) * s;
 
   const type = item.type;
+  // Normalise animation frame — engine items use timer or walkFrame; renderer items use animFrame
+  const animFrame = item.animFrame !== undefined ? item.animFrame
+                  : (item.timer !== undefined ? Math.floor(item.timer / 4) : 0);
 
-  if (type === 'coin') {
-    drawCoinSprite(ctx, ix, iy, iw, ih, item.animFrame, s);
+  if (type === 'coin' || type === 'coin_popup') {
+    drawCoinSprite(ctx, ix, iy, iw, ih, animFrame, s);
   } else if (type === 'mushroom') {
     drawMushroomSprite(ctx, ix, iy, iw, ih, s, false);
-  } else if (type === 'oneup') {
+  } else if (type === '1up' || type === 'oneup') {
     drawMushroomSprite(ctx, ix, iy, iw, ih, s, true);
   } else if (type === 'flower') {
-    drawFlowerSprite(ctx, ix, iy, iw, ih, item.animFrame, s);
+    drawFlowerSprite(ctx, ix, iy, iw, ih, animFrame, s);
   } else if (type === 'star') {
-    drawStarSprite(ctx, ix, iy, iw, ih, item.animFrame, s);
+    drawStarSprite(ctx, ix, iy, iw, ih, animFrame, s);
   } else if (type === 'fireball') {
     drawFireballSprite(ctx, item, ix, iy, iw, ih, s);
   }

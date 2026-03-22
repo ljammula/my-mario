@@ -265,3 +265,76 @@ export const coinSpawns = [
   { col: 12, row: 9 },
   { col: 13, row: 9 },
 ];
+
+// ── Engine-compatible API ─────────────────────────────────────────────────────
+// engine.js calls createGrid(), createEnemies(), createItems(),
+// getSpawnPoint(), and getBlockContent() on the imported level module.
+
+export function createGrid() {
+  // Return a fresh (mutable) copy of the tile grid so the engine can modify it
+  return tileGrid.map(row => row.slice());
+}
+
+export function getSpawnPoint() {
+  // Mario spawns standing on top of the ground tile at marioSpawn position.
+  // y is the top of Mario's feet = row * TILE_SIZE - small mario height (16px).
+  return {
+    x: marioSpawn.col * TILE_SIZE,
+    y: (marioSpawn.row - 1) * TILE_SIZE,
+  };
+}
+
+export function createEnemies() {
+  return enemySpawns.map(e => {
+    const type = e.type === 'Goomba' ? 'goomba'
+               : e.type === 'KoopaTroopa' ? 'koopa'
+               : e.type === 'PiranhaPlant' ? 'piranha'
+               : e.type.toLowerCase();
+
+    const base = {
+      type,
+      x:     e.col * TILE_SIZE,
+      y:     (e.row - 1) * TILE_SIZE,
+      w:     TILE_SIZE,
+      h:     TILE_SIZE,
+      vx:    -1,
+      vy:    0,
+      alive: true,
+      dying: false,
+      state: 'walking',
+      reverseOnWall: true,
+      frameCounter: Math.floor(Math.random() * 60),
+      walkFrame: 0,
+      squished: false,
+    };
+
+    if (type === 'piranha') {
+      base.vx       = 0;
+      base.pipeX    = e.pipeCol * TILE_SIZE;
+      base.pipeBottom = e.row * TILE_SIZE;
+      base.riseHeight = 2 * TILE_SIZE;
+      base.timer    = 0;
+      base.reverseOnWall = false;
+    }
+
+    return base;
+  });
+}
+
+export function createItems() {
+  // Static coins from coinSpawns (items can also spawn dynamically from blocks)
+  return coinSpawns.map(c => ({
+    type:  'coin',
+    alive: true,
+    x:     c.col * TILE_SIZE,
+    y:     c.row * TILE_SIZE,
+    w:     TILE_SIZE,
+    h:     TILE_SIZE,
+    vx:    0,
+    vy:    0,
+  }));
+}
+
+export function getBlockContent(col, row) {
+  return questionBlockContents[`${col},${row}`] || 'coin';
+}
