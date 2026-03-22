@@ -1,96 +1,118 @@
 # My Mario
 
-A Super Mario Bros (1985) browser game — Phaser 3 + TypeScript + Vite.
+A Super Mario Bros (1985) World 1-1 browser clone — vanilla JS + HTML5 Canvas, no frameworks, no build step.
 
-NES-accurate physics, pixel-perfect sprites, procedural Web Audio synthesis. Deploys to GitHub Pages from `/docs`.
+NES-accurate physics, pixel-art sprites drawn via Canvas 2D, procedural Web Audio synthesis. Playable on desktop and mobile. Deploys to GitHub Pages from `/docs`.
+
+**Play:** https://ljammula.github.io/my-mario/
+
+---
 
 ## Quick start
 
 ```bash
-make install   # install dependencies
-make dev       # start dev server at http://localhost:3000
+# No install needed — open directly in browser
+open index.html
+
+# Or serve locally (required for any ES-module work)
+python3 -m http.server 8080
 ```
 
+---
+
 ## Controls
+
+### Keyboard
 
 | Key | Action |
 |-----|--------|
 | ← / → Arrow | Move left / right |
-| Space / Z | Jump (hold for higher jump, release early to cut arc) |
+| Space / Z | Jump (hold for higher jump) |
 | X / Shift | Run · throw fireball (Fire Mario) |
-| ↓ / S | Crouch (Super / Fire Mario only) |
 | Enter | Start / Pause |
+
+### Mobile / Touch
+
+Touch controls appear automatically on touch devices (phones, tablets). A D-pad (◄ ►) and action buttons (A = jump, B = run/fire, START = pause) overlay the bottom of the screen. Multi-touch is supported — hold B and tap A to running-jump.
+
+---
 
 ## Features
 
 - **Physics** — momentum, variable-height jump, coyote time (4 frames), jump buffering (6 frames), skid
-- **Player forms** — Small → Super (Mushroom) → Fire (Fire Flower) → Invincible (Starman) with correct damage downgrade chain
-- **Enemies** — Goomba, Koopa Troopa (shell kick + chain kills), Piranha Plant, Shell entity
-- **World 1-1** — full 224-tile layout: pipes, brick/question blocks, gaps, staircase, flagpole, castle
-- **Scoring** — stomp combos (9th consecutive = 1-UP), flagpole height bonus, time bonus, score wraps at 999,999
-- **HUD** — score, coins, world, timer (hurry mode at ≤100s)
-- **Audio** — procedural Web Audio API synthesis, no external files
-- **Sprites** — NES-palette pixel art, RLE-encoded, pre-baked at startup (zero frame allocation)
-- **Performance** — zero heap allocation in game loop, viewport-culled tile renderer, object-pooled fireballs/particles
+- **Player forms** — Small → Super (Mushroom) → Fire (Fire Flower) → Invincible (Starman), correct damage downgrade chain
+- **Enemies** — Goomba (stomp/squish), Koopa Troopa (shell kick + chain kills), Piranha Plant
+- **World 1-1** — full 224-tile layout: gaps, pipes, brick/question blocks, staircase, flagpole, castle
+- **Items** — Super Mushroom, Fire Flower, Starman, coin popups from Q-blocks
+- **Fireballs** — max 2 on screen, bouncing physics, enemy kill detection
+- **Scoring** — stomp (+100), fireball kill (+200), flagpole height bonus, time bonus
+- **HUD** — score, coins (×), world, countdown timer, lives
+- **Audio** — procedural Web Audio API, no external files; overworld music + SFX (jump, stomp, coin, break, death, flagpole, etc.)
+- **Mobile** — responsive canvas scaling, fixed-bottom touch controls, safe-area insets, landscape support
+
+---
 
 ## Architecture
 
+Fourteen single-responsibility modules loaded as classic `<script>` tags (no build step, works via `file://`):
+
 ```
-src/
-  config/           — physics constants, tile IDs, scoring tables
-  types/            — shared TypeScript interfaces
-  systems/          — InputManager, TileCollision, CameraSystem,
-                      GameStateMachine, SpriteRegistry, SpriteData,
-                      AudioSystem, TileRenderer
-  entities/
-    player/         — Mario, Fireball
-    enemies/        — Enemy (base), Goomba, KoopaTroopa, Shell, PiranhaPlant
-  scenes/           — BootScene, PreloadScene, WorldScene, UIScene
-  ui/               — HUDScene
-  state/            — hudData (shared singleton)
-  data/levels/      — world1-1.ts (full level data)
+js/
+  constants.js   — physics constants, tile IDs, game state enum
+  audio.js       — Web Audio API sound engine (AudioSystem)
+  level.js       — buildLevel() tile map construction + Q-block contents
+  state.js       — global game state variables + entity factories
+  input.js       — keyboard + touch/mobile input handling
+  tiles.js       — getTile / isSolid / tileAt helpers
+  collision.js   — AABB tile collision (player + enemy) + rectsOverlap
+  mario.js       — handleHeadBonk, updateMario, triggerMarioDeath, damageMario
+  enemies.js     — Goomba, Koopa, Piranha state machines
+  items.js       — Mushroom, star, fire flower, coin popup updates
+  fireballs.js   — fireball physics + enemy hit detection
+  camera.js      — camera follow logic
+  render.js      — all canvas drawing functions + render()
+  game.js        — state machine update() + fixed-step game loop
 ```
+
+Load order in `index.html` satisfies all dependencies. No bundler required.
+
+---
 
 ## Stack
 
 | Tool | Role |
 |------|------|
-| Phaser 3 | Scene management, WebGL renderer, camera |
-| TypeScript | Strict-mode throughout |
-| Vite | Dev server, build, HMR |
-| Vitest | Test runner + coverage |
+| HTML5 Canvas 2D | Renderer |
+| Vanilla JS (ES2020) | All game logic |
+| Web Audio API | Procedural music + SFX |
+| Playwright | Automated gameplay tests |
+| GitHub Actions | Deploy to GitHub Pages |
 
-Custom AABB collision — Phaser's physics engine is not used.
+---
 
-## Make targets
+## Canvas & coordinate system
 
-```bash
-make install      # npm install
-make dev          # vite dev server (port 3000)
-make build        # tsc + vite build → docs/
-make preview      # preview production build locally
-make test         # run full test suite (362 tests)
-make test-watch   # vitest watch mode
-make coverage     # test coverage report
-make deploy       # build + stage docs/ for commit
-make clean        # remove docs/ and node_modules/
-```
+- Canvas element: 512×480 px
+- Logical resolution: 256×240 (NES)
+- Scale factor: 2× — all game logic in logical px; renderer multiplies by 2
+- Fixed 60 fps physics timestep with delta accumulator (50 ms cap)
+- One tile = 16 logical px (32 px on screen)
+
+---
 
 ## Deployment
 
-GitHub Pages serves from `main /docs`:
+GitHub Pages serves from `main /docs`. The `docs/` folder mirrors the root `index.html` and all `js/` modules and is kept in sync with every commit.
+
+The `.github/workflows/deploy.yml` uploads `docs/` directly — no build step needed.
+
+---
+
+## Testing
 
 ```bash
-make deploy
-git add docs/
-git commit -m "deploy: $(date +%Y-%m-%d)"
-git push
+npm install        # installs Playwright
+node test.js       # run gameplay tests (if present)
 ```
 
-## Technical notes
-
-- Canvas: 512×480px (2× NES logical resolution 256×240)
-- All game logic runs in logical pixels (1 tile = 16px); renderer multiplies by 2
-- Fixed 60fps physics timestep with delta accumulator (50ms cap)
-- Sprites: palette-indexed RLE arrays decoded once at boot into Phaser `RenderTexture`
-- Audio: single `AudioContext` created on first user interaction; separate music/SFX gain chains
+Automated Playwright tests cover: module loading, PLAYING state, Mario movement, pause/resume, Q-block bonk, mushroom spawn, goomba AI, fireball, damage chain, death by pit, camera follow, tile helpers.
