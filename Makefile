@@ -1,28 +1,8 @@
-.PHONY: install dev build preview test test-watch coverage deploy clean
+.PHONY: serve clean
 
-install:
-	npm install
-
-dev:
-	npx vite --port 3000
-
-build:
-	npx tsc --noEmit && npx vite build
-
-preview:
-	npx vite preview
-
-test:
-	npx vitest run
-
-test-watch:
-	npx vitest
-
-coverage:
-	npx vitest run --coverage
-
-deploy:
-	npx tsc --noEmit && npx vite build
+# Open the game locally (Python simple server)
+serve:
+	python3 -m http.server 8080
 
 clean:
-	rm -rf docs/ node_modules/
+	rm -rf node_modules/
