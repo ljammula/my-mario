@@ -98,6 +98,13 @@ export class WorldScene extends Phaser.Scene {
   // O(1) lookup: key = row * LEVEL_COLS + col → current offsetY
   private readonly _shakeMap = new Map<number, number>();
 
+  // ── Flagpole trigger ───────────────────────────────────────────────────────
+  private _flagpoleTriggered = false;
+
+  // ── Score popup system ────────────────────────────────────────────────────
+  private _scoreTexts: Phaser.GameObjects.Text[] = [];
+  private _scorePopups: Array<{x: number; y: number; value: number; timer: number}> = [];
+
   constructor() {
     super({ key: 'WorldScene' });
   }
@@ -164,6 +171,17 @@ export class WorldScene extends Phaser.Scene {
       img.setOrigin(0, 0).setDepth(11).setVisible(false);
       this.coinPopupImages.push(img);
     }
+    // Pre-allocate 8 score popup text objects
+    for (let i = 0; i < 8; i++) {
+      const t = this.add.text(0, 0, '', {
+        fontFamily: 'monospace',
+        fontSize: '8px',
+        color: '#ffffff',
+        resolution: 2,
+      });
+      t.setOrigin(0.5, 1).setDepth(20).setVisible(false);
+      this._scoreTexts.push(t);
+    }
 
     // Wire audio on first user interaction
     this.input.keyboard?.once('keydown', () => {
@@ -194,6 +212,7 @@ export class WorldScene extends Phaser.Scene {
     this._renderEnemies();
     this._renderItems();
     this._renderCoinPopups();
+    this._updateAndRenderScorePopups();
   }
 
   // ── Physics Step ──────────────────────────────────────────────────────────
@@ -315,7 +334,7 @@ export class WorldScene extends Phaser.Scene {
         audioSystem.playSFX('stomp' as SFXKey);
         const pts = this.stateMachine.onStomp();
         if (pts > 0) {
-          // SE2: spawn score popup at enemy position
+          this._spawnScorePopup(enemy.x + enemy.w / 2, enemy.y, pts);
         }
       } else if (isSideHit(this.mario, enemy)) {
         // Side contact: Mario takes damage
@@ -339,7 +358,7 @@ export class WorldScene extends Phaser.Scene {
           enemy.onFireball();
           this.mario.killFireball(fb);
           this.stateMachine.addScore(SCORE.FIREBALL_KILL);
-          // SE2: spawn score popup at enemy position
+          this._spawnScorePopup(enemy.x + enemy.w / 2, enemy.y, SCORE.FIREBALL_KILL);
           break;
         }
       }
@@ -411,6 +430,9 @@ export class WorldScene extends Phaser.Scene {
 
     // 14. Block shake animations
     this._updateShakeBlocks();
+
+    // 15. Trigger checks (flagpole, etc.)
+    this._checkTriggers();
   }
 
   // ── Entity Rendering ──────────────────────────────────────────────────────
@@ -618,6 +640,10 @@ export class WorldScene extends Phaser.Scene {
     this.items.length       = 0;
     this.coinPopups.length  = 0;
     this._spawnEnemies(this.level.enemies);
+
+    // Reset flagpole and score popups
+    this._flagpoleTriggered = false;
+    this._scorePopups.length = 0;
   }
 
   // ── Enemy Spawning ────────────────────────────────────────────────────────
@@ -644,6 +670,71 @@ export class WorldScene extends Phaser.Scene {
 
       this.enemies.push(enemy);
     }
+  }
+
+  // ── Flagpole Trigger ──────────────────────────────────────────────────────
+
+  private _checkTriggers(): void {
+    if (this._flagpoleTriggered) return;
+    for (const trigger of this.level.triggers) {
+      if (trigger.type !== 'flagpole') continue;
+      // Flagpole x spans: trigger.col * TILE_SIZE  (the pole is at this col)
+      const poleX = trigger.col * TILE_SIZE;
+      const poleRight = poleX + TILE_SIZE;
+      // Mario overlaps this column horizontally
+      if (this.mario.x + this.mario.w > poleX && this.mario.x < poleRight) {
+        this._triggerFlagpole(trigger.row);
+        break;
+      }
+    }
+  }
+
+  private _triggerFlagpole(topRow: number): void {
+    this._flagpoleTriggered = true;
+    // Calculate height bonus: higher touch = more points
+    // Rows 4..13, lower row number = higher on pole = more points
+    const touchRow = Math.floor(this.mario.y / TILE_SIZE);
+    let bonus = 100;
+    if (touchRow <= topRow + 1) bonus = 5000;
+    else if (touchRow <= topRow + 3) bonus = 2000;
+    else if (touchRow <= topRow + 5) bonus = 1000;
+    else if (touchRow <= topRow + 7) bonus = 500;
+    this.stateMachine.addScore(bonus);
+    audioSystem.playSFX('flagpole' as SFXKey);
+    this.stateMachine.toWin();
+  }
+
+  // ── Score Popup System ────────────────────────────────────────────────────
+
+  private _spawnScorePopup(worldX: number, worldY: number, value: number): void {
+    if (this._scorePopups.length >= 8) return;
+    this._scorePopups.push({ x: worldX, y: worldY, value, timer: 0 });
+  }
+
+  private _updateAndRenderScorePopups(): void {
+    // Hide all text slots
+    for (const t of this._scoreTexts) t.setVisible(false);
+
+    let slot = 0;
+    let alive = 0;
+    for (let i = 0; i < this._scorePopups.length; i++) {
+      const p = this._scorePopups[i];
+      p.timer++;
+      p.y -= 0.5;  // float upward in world coords
+
+      if (p.timer < 60 && slot < this._scoreTexts.length) {
+        const t = this._scoreTexts[slot++];
+        t.setText(String(p.value));
+        t.setPosition(p.x, p.y);
+        t.setVisible(true);
+        t.setAlpha(p.timer < 45 ? 1 : 1 - (p.timer - 45) / 15);
+      }
+
+      if (p.timer < 60) {
+        this._scorePopups[alive++] = this._scorePopups[i];
+      }
+    }
+    this._scorePopups.length = alive;
   }
 
   // ── Level Builder (minimal stub — SE2 provides full level data) ───────────
