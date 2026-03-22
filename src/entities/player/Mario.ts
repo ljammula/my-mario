@@ -481,7 +481,8 @@ export class Mario extends Entity {
 
     switch (this.animState) {
       case AnimState.IDLE:
-        return `mario_${formStr}_idle`;
+      case AnimState.GROW:
+        return `mario_${formStr}_stand`;
       case AnimState.WALK:
       case AnimState.RUN:
         return `mario_${formStr}_walk${this.walkFrame + 1}`;
@@ -493,10 +494,8 @@ export class Mario extends Entity {
         return `mario_${formStr}_crouch`;
       case AnimState.DEATH:
         return `mario_small_death`;
-      case AnimState.GROW:
-        return `mario_${formStr}_idle`;
       default:
-        return `mario_${formStr}_idle`;
+        return `mario_${formStr}_stand`;
     }
   }
 

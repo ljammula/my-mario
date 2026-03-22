@@ -18,12 +18,15 @@ let _scene: Phaser.Scene | null = null;
 // ── Internal baking ───────────────────────────────────────────────────────────
 
 /**
- * Convert a SpriteDef (RLE + dimensions) into a Phaser texture.
- * Draws to a RenderTexture pixel-by-pixel using Graphics fill calls,
- * then takes a snapshot into the texture cache.
+ * Convert a SpriteDef (RLE + dimensions) into a Phaser CanvasTexture.
  *
- * We use Graphics objects (1×1 fillRect per pixel) rather than ImageData
- * because Phaser's WebGL renderer does not expose raw pixel writes.
+ * Uses scene.textures.createCanvas() + Canvas 2D API for reliable pixel
+ * writes in both WebGL and Canvas renderers. The resulting texture lives
+ * in the game-level TextureManager and survives scene shutdown.
+ *
+ * (Previous RenderTexture approach was broken: rt.saveTexture() in WebGL
+ *  only keeps a reference to the RT framebuffer; rt.destroy() frees it,
+ *  leaving every saved texture pointing at freed GPU memory → black screen.)
  */
 function bakeSprite(scene: Phaser.Scene, key: string, def: SpriteDef): void {
   if (scene.textures.exists(key)) return;
@@ -31,35 +34,22 @@ function bakeSprite(scene: Phaser.Scene, key: string, def: SpriteDef): void {
   const { width, height, rle } = def;
   const pixels = decodeRLE(rle, width, height);
 
-  // Create a RenderTexture of the correct size
-  const rt = scene.add.renderTexture(0, 0, width, height);
-
-  // Use a Graphics object to draw each non-transparent pixel
-  const gfx = scene.add.graphics();
+  // createCanvas lives in the game's TextureManager — survives scene stop
+  const canvasTex = scene.textures.createCanvas(key, width, height)!;
+  const ctx = canvasTex.context;
 
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const paletteIdx = pixels[row][col];
       if (paletteIdx === 0) continue; // transparent
 
-      const hexStr = NES_PALETTE[paletteIdx];
-      const colorNum = parseInt(hexStr.replace('#', ''), 16);
-
-      gfx.clear();
-      gfx.fillStyle(colorNum, 1);
-      gfx.fillRect(0, 0, 1, 1);
-
-      rt.draw(gfx, col, row);
+      ctx.fillStyle = NES_PALETTE[paletteIdx];
+      ctx.fillRect(col, row, 1, 1);
     }
   }
 
-  gfx.destroy();
-
-  // Save to texture cache under the key
-  rt.saveTexture(key);
-
-  // Remove the render texture display object (texture is now in cache)
-  rt.destroy();
+  // Upload canvas pixels to WebGL texture
+  canvasTex.refresh();
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
