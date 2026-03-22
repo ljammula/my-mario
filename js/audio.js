@@ -150,7 +150,7 @@ const AudioSystem = (() => {
 
   function playMusic(name) {
     if (!audioReady || !ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (name !== 'overworld') return;
     stopMusic();
     musicPlaying = true;
 
@@ -175,42 +175,48 @@ const AudioSystem = (() => {
       [330,0.15],[262,0.15],[0,0.30],
     ];
 
-    if (name !== 'overworld') return;
-
-    let currentTime = ctx.currentTime;
-    musicGain = ctx.createGain();
-    musicGain.gain.value = 0.08;
-    musicGain.connect(ctx.destination);
-
-    function scheduleMelody(startTime) {
-      let t = startTime;
-      melody.forEach(([freq, dur]) => {
-        if (freq > 0) {
-          const osc = ctx.createOscillator();
-          osc.type = 'square';
-          osc.frequency.value = freq;
-          const g = ctx.createGain();
-          g.gain.setValueAtTime(0.8, t);
-          g.gain.linearRampToValueAtTime(0, t + dur * 0.9);
-          osc.connect(g);
-          g.connect(musicGain);
-          osc.start(t);
-          osc.stop(t + dur);
-        }
-        t += dur;
-      });
-      return t;
-    }
-
-    let totalDur = melody.reduce((s, [, d]) => s + d, 0);
-    let endTime = scheduleMelody(currentTime);
-
-    function scheduleLoop() {
+    function startScheduling() {
       if (!musicPlaying) return;
-      endTime = scheduleMelody(endTime);
+      musicGain = ctx.createGain();
+      musicGain.gain.value = 0.08;
+      musicGain.connect(ctx.destination);
+
+      function scheduleMelody(startTime) {
+        let t = startTime;
+        melody.forEach(([freq, dur]) => {
+          if (freq > 0) {
+            const osc = ctx.createOscillator();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.8, t);
+            g.gain.linearRampToValueAtTime(0, t + dur * 0.9);
+            osc.connect(g);
+            g.connect(musicGain);
+            osc.start(t);
+            osc.stop(t + dur);
+          }
+          t += dur;
+        });
+        return t;
+      }
+
+      const totalDur = melody.reduce((s, [, d]) => s + d, 0);
+      let endTime = scheduleMelody(ctx.currentTime + 0.05);
+
+      function scheduleLoop() {
+        if (!musicPlaying) return;
+        endTime = scheduleMelody(endTime);
+        setTimeout(scheduleLoop, totalDur * 1000 * 0.9);
+      }
       setTimeout(scheduleLoop, totalDur * 1000 * 0.9);
     }
-    setTimeout(scheduleLoop, totalDur * 1000 * 0.9);
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(startScheduling);
+    } else {
+      startScheduling();
+    }
   }
 
   function stopMusic() {
