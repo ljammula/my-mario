@@ -36,8 +36,8 @@ const config: Phaser.Types.Core.GameConfig = {
     roundPixels: true,
   },
   scale: {
-    mode: Phaser.Scale.NONE,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.NO_CENTER,
   },
   audio: {
     disableWebAudio: false,  // SE2 uses Web Audio API directly for procedural synthesis
