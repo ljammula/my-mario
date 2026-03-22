@@ -2,33 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Mario Bros</title>
+  <title>My Mario</title>
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      image-rendering: -moz-crisp-edges;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
   </style>
-  <script type="module" crossorigin src="./assets/index-BiUDSFRX.js"></script>
 </head>
 <body>
+  <canvas id="gameCanvas" width="512" height="480"></canvas>
+  <script src="js/game.js"></script>
 </body>
 </html>
