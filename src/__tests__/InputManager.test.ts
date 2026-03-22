@@ -4,6 +4,8 @@
  *
  * InputManager uses window.addEventListener, so we simulate keydown/keyup
  * by dispatching real KeyboardEvents on the global window object.
+ *
+ * @vitest-environment jsdom
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
