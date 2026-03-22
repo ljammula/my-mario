@@ -32,7 +32,7 @@ export const DEATH_POP_VELOCITY  = -8.0;   // initial vy on death pop
 
 // ─── Fireball ─────────────────────────────────────────────────────────────────
 export const FIREBALL_SPEED_X    = 6.0;    // px/frame horizontal
-export const FIREBALL_SPEED_Y    = -4.0;   // initial vertical (launches slightly upward)
+export const FIREBALL_SPEED_Y    = 3.0;    // initial vertical (downward, toward ground)
 export const FIREBALL_GRAVITY    = 0.4;    // px/frame² gravity on fireball
 export const FIREBALL_MAX_BOUNCES= 5;      // max ground bounces before dying
 export const FIREBALL_MAX_ACTIVE = 2;      // max simultaneous fireballs

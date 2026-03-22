@@ -11,7 +11,7 @@ export class Mushroom extends Item {
 
   constructor(x: number, y: number) {
     super(x, y, 16, 16);
-    this.vx = 1;
+    this.vx = 1.5;
     this.vy = 0;
   }
 

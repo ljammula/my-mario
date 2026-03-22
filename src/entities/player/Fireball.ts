@@ -74,4 +74,11 @@ export class Fireball extends Entity {
   get animFrame(): number {
     return Math.floor(this.frame / 4) % 4;
   }
+
+  /** Alternating sprite key for fireball animation. */
+  getSpriteKey(): string {
+    return (Math.floor(this.frame / 4) % 2 === 0)
+      ? 'fireball_1'
+      : 'fireball_2';
+  }
 }
