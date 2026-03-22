@@ -126,7 +126,8 @@ export class UIScene extends Phaser.Scene {
         this._showOverlay(`WORLD  ${hudData.world}`, `× ${hudData.lives}`);
         break;
       case Screen.DEATH:
-        this._showOverlay('', `× ${hudData.lives}`);
+        // No overlay during death animation — just let Mario's sprite play
+        this._hideOverlay();
         break;
       default:
         this._hideOverlay();
