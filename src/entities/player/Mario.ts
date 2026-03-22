@@ -500,7 +500,7 @@ export class Mario extends Entity {
     this.walkFrameTimer++;
     if (this.walkFrameTimer >= frameDur) {
       this.walkFrameTimer = 0;
-      this.walkFrame      = (this.walkFrame + 1) % 3;
+      this.walkFrame      = (this.walkFrame + 1) % 2;
     }
   }
 
