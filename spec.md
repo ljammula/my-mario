@@ -3,7 +3,7 @@
 **Platform:** Web browser (HTML5 Canvas, vanilla JavaScript, no external frameworks)
 **Reference:** Super Mario Bros (Nintendo, NES, 1985)
 **Status:** Active
-**Version:** 1.0
+**Version:** 2.0
 **Owner:** Product
 **Last updated:** 2026-03-22
 
@@ -76,9 +76,10 @@ Browser-based casual and retro gamers. No install required. Keyboard controls wi
 - Cycle-accurate NES emulation or ROM loading
 - Multiplayer (2-player alternating)
 - Level editor / user-generated content
-- Mobile touch controls
 - Gamepad support (nice-to-have post-launch)
 - Save state persistence across sessions
+
+> **Shipped post-v1:** Mobile touch controls (D-pad + action buttons, multi-touch, canvas scaling, landscape support)
 
 ---
 
@@ -600,14 +601,22 @@ despawnPolicy   lives               entities[]
 
 ```
 my-mario/
-├── index.html     # Entry point — canvas element, script imports
-├── engine.js      # Game loop, input handling, collision detection
-├── player.js      # Mario state machine, physics, animation
-├── enemies.js     # Enemy classes: Goomba, KoopaTroopa, Shell, PiranhaPlant, FlyingKoopa, ...
-├── level.js       # Level data (tile grid, enemy spawns, block contents), camera logic
-├── renderer.js    # All canvas draw calls: tiles, sprites, HUD, particles, overlays
-├── audio.js       # Web Audio API: music sequencer, SFX functions
-└── ui.js          # Title screen, Game Over, pause overlay, score popups
+├── index.html        # Entry point — canvas, touch controls, script tags
+└── js/
+    ├── constants.js  # Physics constants, tile IDs, game state enum
+    ├── audio.js      # Web Audio API sound engine
+    ├── level.js      # buildLevel() tile map + Q-block contents
+    ├── state.js      # Global game state variables + entity factories
+    ├── input.js      # Keyboard + touch/mobile input
+    ├── tiles.js      # getTile / isSolid / tileAt helpers
+    ├── collision.js  # AABB tile collision (player + enemy) + rectsOverlap
+    ├── mario.js      # Mario physics, head-bonk, death, damage
+    ├── enemies.js    # Goomba, Koopa, Piranha state machines
+    ├── items.js      # Mushroom, star, fire flower, coin popup updates
+    ├── fireballs.js  # Fireball physics + enemy hit detection
+    ├── camera.js     # Camera follow logic
+    ├── render.js     # All canvas drawing + render()
+    └── game.js       # State machine update() + fixed-step game loop
 ```
 
 ### Canvas & Coordinate System
@@ -620,23 +629,7 @@ my-mario/
 
 ### index.html
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>My Mario</title>
-  <style>
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    canvas { image-rendering: pixelated; }
-  </style>
-</head>
-<body>
-  <canvas id="gameCanvas" width="512" height="480"></canvas>
-  <script type="module" src="engine.js"></script>
-</body>
-</html>
-```
+Single HTML file. Scripts loaded as classic `<script>` tags in dependency order (constants → audio → level → state → input → tiles → collision → mario → enemies → items → fireballs → camera → render → game). No bundler or build step required.
 
 ### Game Loop (engine.js)
 
