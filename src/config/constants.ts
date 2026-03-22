@@ -18,9 +18,9 @@ export const TILE_SIZE_C         = 32;     // canvas pixels per tile (TILE_SIZE 
 
 // ─── Level Dimensions ─────────────────────────────────────────────────────────
 export const LEVEL_COLS          = 224;    // total tile columns
-export const LEVEL_ROWS          = 16;     // total tile rows (row 15 = death pit)
+export const LEVEL_ROWS          = 15;     // rows 0-14; row 14 = ground; death pit is virtual (no grid row)
 export const LEVEL_WIDTH_PX      = LEVEL_COLS * TILE_SIZE;   // 3584 logical px
-export const LEVEL_HEIGHT_PX     = LEVEL_ROWS * TILE_SIZE;   // 256 logical px
+export const LEVEL_HEIGHT_PX     = LEVEL_ROWS * TILE_SIZE;   // 240 logical px
 
 // ─── Tile IDs ─────────────────────────────────────────────────────────────────
 export const TILE = Object.freeze({

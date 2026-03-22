@@ -120,11 +120,9 @@ export class GameStateMachine {
   }
 
   toNextLevel(): void {
-    this.state.levelNum++;
-    if (this.state.levelNum > 4) {
-      this.state.levelNum = 1;
-      this.state.world++;
-    }
+    // Only World 1-1 exists — restart it
+    this.state.levelNum = 1;
+    this.state.world    = 1;
     this.toIntro();
   }
 

@@ -52,7 +52,7 @@ function buildGrid(): string[][] {
 
   for (const [start, end] of groundSegments) {
     for (let col = start; col <= end; col++) {
-      for (let row = 9; row < ROWS; row++) {
+      for (let row = 13; row < ROWS; row++) {
         grid[row][col] = 'G';
       }
     }
@@ -245,6 +245,6 @@ export const WORLD_1_1: LevelData = {
   blocks:      BLOCKS,
   triggers:    TRIGGERS,
   marioStartX: 3 * TILE_SIZE,      // col 3 → 48 logical px
-  marioStartY: 13 * TILE_SIZE - 1, // row 13, standing on ground
+  marioStartY: 13 * TILE_SIZE - 16,  // = 192, feet land on top of row 13
   bgColor:     '#6888FC',          // NES sky blue (palette index 20)
 };
