@@ -396,16 +396,15 @@ function buildLevel() {
   // Hard block platform: cols 29-33, row 8
   for (let c = 29; c <= 33; c++) setTile(c, 8, 'H');
 
-  // Staircase (H tiles)
-  setTile(198, 13, 'H');
-  for (let r = 12; r <= 13; r++) setTile(199, r, 'H');
-  for (let r = 11; r <= 13; r++) setTile(200, r, 'H');
-  for (let r = 10; r <= 13; r++) setTile(201, r, 'H');
-  for (let r =  9; r <= 13; r++) setTile(202, r, 'H');
-  for (let r =  8; r <= 13; r++) setTile(203, r, 'H');
-  for (let r =  7; r <= 13; r++) setTile(204, r, 'H');
-  for (let r =  6; r <= 13; r++) setTile(205, r, 'H');
-  // cols 206-209 rows 13-14 (H)
+  // Staircase (H tiles) — fill row 14 too so base is solid
+  setTile(198, 13, 'H'); setTile(198, 14, 'H');
+  for (let r = 12; r <= 14; r++) setTile(199, r, 'H');
+  for (let r = 11; r <= 14; r++) setTile(200, r, 'H');
+  for (let r = 10; r <= 14; r++) setTile(201, r, 'H');
+  for (let r =  9; r <= 14; r++) setTile(202, r, 'H');
+  for (let r =  8; r <= 14; r++) setTile(203, r, 'H');
+  for (let r =  7; r <= 14; r++) setTile(204, r, 'H');
+  for (let r =  6; r <= 14; r++) setTile(205, r, 'H');
   for (let c = 206; c <= 209; c++) {
     setTile(c, 13, 'H');
     setTile(c, 14, 'H');
@@ -516,14 +515,15 @@ let piranha = {
 };
 
 function createEnemyGoomba(col, row) {
+  const h = 16;
   return {
     type: 'goomba',
     x: col * TILE,
-    y: row * TILE,
+    y: row * TILE - h,  // feet touch top of spawn row
     vx: -1.0,
     vy: 0,
     w: 16,
-    h: 16,
+    h: h,
     state: 'walk', // 'walk','squish','dead'
     stateTimer: 0,
     active: false,
@@ -532,14 +532,15 @@ function createEnemyGoomba(col, row) {
 }
 
 function createEnemyKoopa(col, row) {
+  const h = 24;
   return {
     type: 'koopa',
     x: col * TILE,
-    y: row * TILE,
+    y: row * TILE - h,  // feet touch top of spawn row
     vx: -1.0,
     vy: 0,
     w: 14,
-    h: 24,
+    h: h,
     state: 'walk', // 'walk','shell','shell_moving'
     stateTimer: 0,
     active: false,
@@ -549,15 +550,16 @@ function createEnemyKoopa(col, row) {
 
 function spawnEnemies() {
   enemies = [];
-  // Goombas
+  // Goombas  (row 13 = ground; spawn y = 13*16-16 = 192)
+  // Note: pipe 2 at cols 38-39, pipe 3 at cols 46-47, pipe 4 at cols 57-58
   const goombas = [
-    [22,13],[23,13],[39,13],[40,13],[80,13],[81,13],
+    [22,13],[23,13],[41,13],[43,13],[80,13],[81,13],
     [107,13],[108,13],[110,13],[111,13],[149,13],[150,13],[153,13],[154,13]
   ];
   for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c, r));
 
-  // Koopa Troopas
-  enemies.push(createEnemyKoopa(57, 12));
+  // Koopa Troopas — col 60 is clear of pipe 4 (cols 57-58)
+  enemies.push(createEnemyKoopa(60, 13));
   enemies.push(createEnemyKoopa(128, 13));
 }
 
@@ -1556,11 +1558,16 @@ function drawTile(ctx, id, col, row) {
       break;
     }
     case 'H': {
-      ctx.fillStyle = '#555555';
+      // Hard/immovable block — same look as bricks but slightly darker
+      ctx.fillStyle = '#B87333';
       ctx.fillRect(sx, sy, sz, sz);
-      ctx.fillStyle = '#444444';
+      ctx.fillStyle = '#8B5E3C';
       ctx.fillRect(sx, sy, sz, 2);
+      ctx.fillRect(sx, sy + sz/2, sz, 2);
       ctx.fillRect(sx, sy, 2, sz);
+      ctx.fillRect(sx + sz/2, sy + 2, 2, sz/2 - 2);
+      ctx.fillRect(sx + sz/4, sy + sz/2 + 2, 2, sz/2 - 2);
+      ctx.fillRect(sx + 3*sz/4, sy + sz/2 + 2, 2, sz/2 - 2);
       break;
     }
     case 'PT': {
