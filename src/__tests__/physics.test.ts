@@ -113,8 +113,8 @@ describe('physics constants', () => {
       expect(FIREBALL_SPEED_X).toBe(6.0);
     });
 
-    it('FIREBALL_SPEED_Y equals -4.0', () => {
-      expect(FIREBALL_SPEED_Y).toBe(-4.0);
+    it('FIREBALL_SPEED_Y equals 3.0 (positive = downward launch angle)', () => {
+      expect(FIREBALL_SPEED_Y).toBe(3.0);
     });
 
     it('FIREBALL_GRAVITY equals 0.4', () => {

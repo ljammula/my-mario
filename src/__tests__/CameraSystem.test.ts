@@ -158,7 +158,7 @@ describe('CameraSystem', () => {
 
   // ── applyToPhaser ─────────────────────────────────────────────────────────
 
-  it('applyToPhaser calls scene.cameras.main.setScroll with cameraX * SCALE and 0', () => {
+  it('applyToPhaser calls scene.cameras.main.setScroll with cameraX (logical px) and 0', () => {
     camera.update(400, LEVEL_WIDTH);
     const mockSetScroll = vi.fn();
     const fakeScene = {
@@ -168,7 +168,8 @@ describe('CameraSystem', () => {
     camera.applyToPhaser(fakeScene);
 
     expect(mockSetScroll).toHaveBeenCalledOnce();
-    expect(mockSetScroll).toHaveBeenCalledWith(camera.cameraX * SCALE, 0);
+    // Phaser camera.setScroll takes world (logical) coordinates; zoom=2 handles the 2× upscale
+    expect(mockSetScroll).toHaveBeenCalledWith(camera.cameraX, 0);
   });
 
   it('applyToPhaser passes 0 as the Y scroll argument', () => {

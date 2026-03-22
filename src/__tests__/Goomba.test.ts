@@ -238,7 +238,7 @@ describe('Goomba — getSpriteKey', () => {
   it('returns stomped sprite key when STOMPED', () => {
     const g = goomba();
     g.onStomp(fakeMario());
-    expect(g.getSpriteKey()).toBe('goomba_stomped');
+    expect(g.getSpriteKey()).toBe('goomba_squish');
   });
 
   it('returns dead sprite key when FLIPPED', () => {

@@ -470,21 +470,21 @@ describe('GameStateMachine — screen transitions', () => {
     expect(gsm.state.frameCount).toBe(2);
   });
 
-  it('toNextLevel advances levelNum and wraps world after level 4', () => {
+  it('toNextLevel always resets to World 1-1 (only one level exists)', () => {
     const gsm = makeGSM();
     gsm.state.levelNum = 4;
-    gsm.state.world    = 1;
+    gsm.state.world    = 3;
     gsm.toNextLevel();
     expect(gsm.state.levelNum).toBe(1);
-    expect(gsm.state.world).toBe(2);
+    expect(gsm.state.world).toBe(1);
   });
 
-  it('toNextLevel increments levelNum within same world when < 4', () => {
+  it('toNextLevel resets to 1-1 regardless of current level', () => {
     const gsm = makeGSM();
     gsm.state.levelNum = 2;
     gsm.state.world    = 1;
     gsm.toNextLevel();
-    expect(gsm.state.levelNum).toBe(3);
+    expect(gsm.state.levelNum).toBe(1);
     expect(gsm.state.world).toBe(1);
   });
 });

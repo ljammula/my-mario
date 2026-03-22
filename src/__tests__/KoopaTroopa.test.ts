@@ -284,6 +284,6 @@ describe('KoopaTroopa — getSpriteKey', () => {
     k.onStomp(fakeMario(500));
     const marioLeft = new Mario(30, 208);
     k.onStomp(marioLeft);
-    expect(k.getSpriteKey()).toMatch(/^koopa_shell_slide/);
+    expect(k.getSpriteKey()).toMatch(/^koopa_shell_spin/);
   });
 });

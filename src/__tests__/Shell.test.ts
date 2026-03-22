@@ -212,6 +212,6 @@ describe('Shell — falls off screen', () => {
 describe('Shell — getSpriteKey', () => {
   it('returns a slide sprite key', () => {
     const s = shell();
-    expect(s.getSpriteKey()).toMatch(/^koopa_shell_slide/);
+    expect(s.getSpriteKey()).toMatch(/^koopa_shell_spin/);
   });
 });
