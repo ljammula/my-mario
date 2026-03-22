@@ -77,7 +77,7 @@ export class UIScene extends Phaser.Scene {
     this.scoreValue  = this.add.text(24, 24, '000000',  FONT_VALUE).setDepth(101);
 
     this.coinLabel   = this.add.text(196, 8,  '×',      FONT_LABEL).setDepth(101);
-    this.coinValue   = this.add.text(212, 24, '×00',    FONT_VALUE).setDepth(101);
+    this.coinValue   = this.add.text(212, 24, '00',     FONT_VALUE).setDepth(101);
 
     this.worldLabel  = this.add.text(296, 8,  'WORLD',  FONT_LABEL).setDepth(101);
     this.worldValue  = this.add.text(308, 24, '1-1',    FONT_VALUE).setDepth(101);
@@ -99,7 +99,7 @@ export class UIScene extends Phaser.Scene {
   update(_time: number, _delta: number): void {
     // ── HUD values ──────────────────────────────────────────────────────────
     this.scoreValue.setText(String(hudData.score).padStart(6, '0'));
-    this.coinValue.setText(`×${String(hudData.coins).padStart(2, '0')}`);
+    this.coinValue.setText(String(hudData.coins).padStart(2, '0'));
     this.worldValue.setText(hudData.world);
     this.timeValue.setText(String(hudData.time));
 
