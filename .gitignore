@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.local
+
+# docs/ is intentionally tracked — GitHub Pages deployment target
+# Do NOT add docs/ here
