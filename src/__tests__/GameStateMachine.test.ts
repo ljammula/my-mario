@@ -55,11 +55,12 @@ describe('GameStateMachine — score', () => {
     expect(gsm.state.score).toBe(500);
   });
 
-  it('score is clamped to 999999 on overflow', () => {
+  it('score wraps modulo 1000000 on overflow (999800 + 300 = 100)', () => {
     const gsm = makeGSM();
     gsm.addScore(999_800);
     gsm.addScore(300);
-    expect(gsm.state.score).toBe(999_999);
+    // (999_800 + 300) % 1_000_000 = 1_000_100 % 1_000_000 = 100
+    expect(gsm.state.score).toBe(100);
   });
 
   it('addScore(0) leaves score unchanged', () => {
@@ -75,13 +76,13 @@ describe('GameStateMachine — score', () => {
     expect(gsm.state.score).toBe(100);
   });
 
-  it('score wraps after hitting 999999 exactly: next addScore starts from new value', () => {
+  it('score wraps after hitting 999999: (999999 + 500) % 1000000 = 499', () => {
     const gsm = makeGSM();
     gsm.addScore(999_999);
     expect(gsm.state.score).toBe(999_999);
-    // After being at 999999, next addScore resets to the new points value (wrap semantics)
+    // Wrap semantics: (999_999 + 500) % 1_000_000 = 499
     gsm.addScore(500);
-    expect(gsm.state.score).toBe(500);
+    expect(gsm.state.score).toBe(499);
   });
 });
 

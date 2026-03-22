@@ -23,27 +23,19 @@
 import * as SpriteRegistry from '../systems/SpriteRegistry';
 import { CANVAS_WIDTH, HUD } from '../config/constants';
 
-// ── Shared HUD data ───────────────────────────────────────────────────────────
-
-export interface HudData {
-  score:  number;   // 0–999999
-  coins:  number;   // 0–99
-  world:  string;   // "1-1"
-  time:   number;   // 0–400
-  lives:  number;
-}
-
-/**
- * Shared state object. WorldScene writes to this; HUDScene reads it.
- * Using a plain mutable object avoids cross-scene event overhead.
- */
-export const hudData: HudData = {
-  score: 0,
-  coins: 0,
-  world: '1-1',
-  time:  400,
-  lives: 3,
+// Module-level constant — allocated once, not per _charKey() call (FIX-13)
+const LETTER_MAP: Record<string, string> = {
+  M: 'letter_M', A: 'letter_A', R: 'letter_R', I: 'letter_I',
+  O: 'letter_O', W: 'letter_W', L: 'letter_L', D: 'letter_D',
+  T: 'letter_T', E: 'letter_E', C: 'letter_C', N: 'letter_N',
+  G: 'letter_G', V: 'letter_V', P: 'letter_P', U: 'letter_U',
+  S: 'letter_S', B: 'letter_B', X: 'letter_X',
 };
+
+// ── Shared HUD data ───────────────────────────────────────────────────────────
+// Imported from the single source of truth; WorldScene writes, HUDScene reads.
+import { hudData } from '../state/hudData';
+export type { HudData } from '../state/hudData';
 
 // ── Pixel font glyph size (canvas px) ────────────────────────────────────────
 
@@ -220,14 +212,7 @@ export class HUDScene extends Phaser.Scene {
     if (ch >= '0' && ch <= '9') return `digit_${ch}`;
     if (ch === '-') return 'letter_I'; // use 'I' shape as dash approximation (narrow vertical)
     const upper = ch.toUpperCase();
-    const letterMap: Record<string, string> = {
-      M: 'letter_M', A: 'letter_A', R: 'letter_R', I: 'letter_I',
-      O: 'letter_O', W: 'letter_W', L: 'letter_L', D: 'letter_D',
-      T: 'letter_T', E: 'letter_E', C: 'letter_C', N: 'letter_N',
-      G: 'letter_G', V: 'letter_V', P: 'letter_P', U: 'letter_U',
-      S: 'letter_S', B: 'letter_B', X: 'letter_X',
-    };
-    return letterMap[upper] ?? null;
+    return LETTER_MAP[upper] ?? null;
   }
 
   // ── Factory helpers ───────────────────────────────────────────────────────

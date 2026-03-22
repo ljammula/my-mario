@@ -20,6 +20,9 @@
 import { InputManager } from '../systems/InputManager';
 import { CameraSystem } from '../systems/CameraSystem';
 import { GameStateMachine, GameStateMachineCallbacks } from '../systems/GameStateMachine';
+import { TileRenderer } from '../systems/TileRenderer';
+import * as SpriteRegistry from '../systems/SpriteRegistry';
+import { audioSystem, MusicTrack, SFXKey } from '../systems/AudioSystem';
 import {
   isStomping,
   isSideHit,
@@ -31,7 +34,7 @@ import { Shell } from '../entities/enemies/Shell';
 import { Goomba } from '../entities/enemies/Goomba';
 import { KoopaTroopa } from '../entities/enemies/KoopaTroopa';
 import { PiranhaPlant } from '../entities/enemies/PiranhaPlant';
-import { hudData } from './UIScene';
+import { hudData } from '../state/hudData';
 import {
   TILE_SIZE,
   TILE,
@@ -67,8 +70,15 @@ export class WorldScene extends Phaser.Scene {
   // ── Fixed timestep accumulator ─────────────────────────────────────────────
   private accumulator:      number   = 0;
 
-  // ── Block shake animation tracking (for brick shake on Small Mario hit) ───
-  private shakeBlocks: Array<{ col: number; row: number; timer: number; offsetY: number }> = [];
+  // ── TileRenderer (SE2) ─────────────────────────────────────────────────────
+  private tileRenderer!: TileRenderer;
+
+  // ── Block shake animation tracking (pre-allocated pool, max 8 simultaneous) ─
+  private readonly _shakePool: Array<{ col: number; row: number; timer: number; offsetY: number }> =
+    Array.from({ length: 8 }, () => ({ col: 0, row: 0, timer: 0, offsetY: 0 }));
+  private _shakeCount = 0;
+  // O(1) lookup: key = row * LEVEL_COLS + col → current offsetY
+  private readonly _shakeMap = new Map<number, number>();
 
   constructor() {
     super({ key: 'WorldScene' });
@@ -87,11 +97,11 @@ export class WorldScene extends Phaser.Scene {
     this.camera       = new CameraSystem();
 
     const callbacks: GameStateMachineCallbacks = {
-      onHurryMode:     () => { /* SE2: AudioSystem.hurry() */ },
-      onLivesLost:     () => { /* SE2: play death jingle */ },
-      onGameOver:      () => { /* SE2: play game over music */ },
-      onLevelComplete: (_timeBonus: number) => { /* SE2: play fanfare */ },
-      onExtraLife:     () => { /* SE2: play 1UP jingle */ },
+      onHurryMode:     () => { audioSystem.setHurryMode(true); },
+      onLivesLost:     () => { /* death jingle already triggered at death point */ },
+      onGameOver:      () => { /* game over music handled by screen transition */ },
+      onLevelComplete: (_timeBonus: number) => { audioSystem.playSFX('level_complete' as SFXKey); },
+      onExtraLife:     () => { audioSystem.playSFX('oneup' as SFXKey); },
     };
 
     this.stateMachine = new GameStateMachine(callbacks);
@@ -107,6 +117,16 @@ export class WorldScene extends Phaser.Scene {
 
     // Set background color
     this.cameras.main.setBackgroundColor(this.level.bgColor);
+
+    // Initialize tile renderer (SE2)
+    this.tileRenderer = new TileRenderer(this, SpriteRegistry);
+    this.tileRenderer.buildFromGrid(this.grid);
+
+    // Wire audio on first user interaction via keyboard input listener
+    this.input.keyboard?.once('keydown', () => {
+      audioSystem.init();
+      audioSystem.playMusic('overworld' as MusicTrack);
+    });
   }
 
   update(_time: number, delta: number): void {
@@ -123,8 +143,8 @@ export class WorldScene extends Phaser.Scene {
     // Apply camera to Phaser after all physics steps
     this.camera.applyToPhaser(this);
 
-    // SE2: render call happens automatically via Phaser's scene pipeline
-    // SE2's sprite rendering system reads mario, enemies, etc. from the scene
+    // Update tile renderer each display frame (not per physics step)
+    this.tileRenderer.update(this.camera.cameraX);
   }
 
   // ── Physics Step ──────────────────────────────────────────────────────────
@@ -164,10 +184,9 @@ export class WorldScene extends Phaser.Scene {
 
     // ── PLAYING ────────────────────────────────────────────────────────────
 
-    // 1. Poll input
-    const input = this.inputManager.pollInput();
-    // Inform InputManager whether Mario is airborne (for jump buffer)
+    // 1. Poll input (set airborne BEFORE poll so jump buffer sees correct state)
     this.inputManager.playerAirborne = !this.mario.grounded;
+    const input = this.inputManager.pollInput();
 
     // Track grounded-before for stomp combo reset
     const wasGrounded = this.mario.grounded;
@@ -212,6 +231,7 @@ export class WorldScene extends Phaser.Scene {
         // Stomp: Mario bounces, enemy takes stomp damage
         this.mario.bounceOffEnemy();
         enemy.onStomp(this.mario);
+        audioSystem.playSFX('stomp' as SFXKey);
         const pts = this.stateMachine.onStomp();
         if (pts > 0) {
           // SE2: spawn score popup at enemy position
@@ -220,9 +240,10 @@ export class WorldScene extends Phaser.Scene {
         // Side contact: Mario takes damage
         const damaged = this.mario.onEnemyContact();
         if (damaged) {
-          // SE2: play hurt sound
+          // hurt sound handled below (death or hurt)
         }
         if (this.mario.dead) {
+          audioSystem.playSFX('death' as SFXKey);
           this.stateMachine.triggerDeath();
         }
       }
@@ -235,7 +256,7 @@ export class WorldScene extends Phaser.Scene {
         if (!enemy.alive || !enemy.active) continue;
         if (entitiesOverlap(fb, enemy)) {
           enemy.onFireball();
-          fb.alive = false;
+          this.mario.killFireball(fb);
           this.stateMachine.addScore(SCORE.FIREBALL_KILL);
           // SE2: spawn score popup at enemy position
           break;
@@ -271,9 +292,18 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // 10. Cull dead entities
-    this.enemies = this.enemies.filter(e => e.alive);
-    this.shells  = this.shells.filter(s => s.alive);
+    // 10. Cull dead entities (in-place compact — zero allocation)
+    let ei = 0;
+    for (let i = 0; i < this.enemies.length; i++) {
+      if (this.enemies[i].alive) this.enemies[ei++] = this.enemies[i];
+    }
+    this.enemies.length = ei;
+
+    let si = 0;
+    for (let i = 0; i < this.shells.length; i++) {
+      if (this.shells[i].alive) this.shells[si++] = this.shells[i];
+    }
+    this.shells.length = si;
 
     // 11. Camera update
     this.camera.update(this.mario.x, this.level.widthPx);
@@ -299,8 +329,9 @@ export class WorldScene extends Phaser.Scene {
       case TILE.INVISIBLE: {
         // Reveal content, convert to USED
         this.grid[row][col] = TILE.USED;
+        this.tileRenderer.setTile(col, row, TILE.USED);
+        audioSystem.playSFX('bump' as SFXKey);
         // SE2: spawn item based on level block data at (col, row)
-        // SE2: play bump sound
         this.stateMachine.addScore(0); // points from item collection handled separately
         break;
       }
@@ -309,13 +340,18 @@ export class WorldScene extends Phaser.Scene {
         if (this.mario.isSuper) {
           // Super/Fire Mario: break the brick
           this.grid[row][col] = TILE.EMPTY;
+          this.tileRenderer.setTile(col, row, TILE.EMPTY);
           this.stateMachine.addScore(SCORE.BRICK_BREAK);
+          audioSystem.playSFX('break_block' as SFXKey);
           // SE2: spawn 4 debris particles at (col * TILE_SIZE, row * TILE_SIZE)
-          // SE2: play break sound
         } else {
           // Small Mario: shake the brick (visual feedback only)
-          this.shakeBlocks.push({ col, row, timer: 8, offsetY: 0 });
-          // SE2: play bump sound
+          if (this._shakeCount < this._shakePool.length) {
+            const slot = this._shakePool[this._shakeCount++];
+            slot.col = col; slot.row = row; slot.timer = 8; slot.offsetY = 0;
+            this._shakeMap.set(row * LEVEL_COLS + col, 0);
+          }
+          audioSystem.playSFX('bump' as SFXKey);
         }
         break;
       }
@@ -329,20 +365,23 @@ export class WorldScene extends Phaser.Scene {
   // ── Block Shake Animation ─────────────────────────────────────────────────
 
   private _updateShakeBlocks(): void {
-    for (const sb of this.shakeBlocks) {
+    let alive = 0;
+    for (let i = 0; i < this._shakeCount; i++) {
+      const sb = this._shakePool[i];
       sb.timer--;
-      // 2px up over 2 frames, then 2px back over next 2 frames
-      if (sb.timer >= 6) {
-        sb.offsetY = -2;
-      } else if (sb.timer >= 4) {
-        sb.offsetY = -2;
-      } else if (sb.timer >= 2) {
-        sb.offsetY = 0;
+      // 2px up over first 4 frames, then return over next 4 frames
+      sb.offsetY = sb.timer >= 4 ? -2 : 0;
+
+      if (sb.timer > 0) {
+        // Keep slot — compact in place
+        if (alive !== i) this._shakePool[alive] = this._shakePool[i];
+        this._shakeMap.set(sb.row * LEVEL_COLS + sb.col, sb.offsetY);
+        alive++;
       } else {
-        sb.offsetY = 0;
+        this._shakeMap.delete(sb.row * LEVEL_COLS + sb.col);
       }
     }
-    this.shakeBlocks = this.shakeBlocks.filter(sb => sb.timer > 0);
+    this._shakeCount = alive;
   }
 
   /**
@@ -350,8 +389,7 @@ export class WorldScene extends Phaser.Scene {
    * SE2's tile renderer reads this to offset the tile's draw position.
    */
   getBlockShakeOffset(col: number, row: number): number {
-    const sb = this.shakeBlocks.find(b => b.col === col && b.row === row);
-    return sb ? sb.offsetY : 0;
+    return this._shakeMap.get(row * LEVEL_COLS + col) ?? 0;
   }
 
   // ── HUD Data Feed ─────────────────────────────────────────────────────────

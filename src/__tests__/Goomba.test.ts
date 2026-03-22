@@ -77,11 +77,10 @@ describe('Goomba — walking', () => {
     expect(g.x).toBeLessThan(xBefore);
   });
 
-  it('hits wall: position is snapped and goomba remains alive', () => {
+  it('hits wall: vx reverses direction (single negation, no double-flip)', () => {
     // Goomba at x=110, moving right vx=+1. Wall at col=7 (x=112).
-    // resolveEnemyTileCollision (reverseOnWall=true) negates vx to -1 and snaps position.
-    // Goomba.update then also negates: -(-1) = +1. Net: vx unchanged but position snapped.
-    // This double-negation is the actual code behavior.
+    // resolveEnemyTileCollision (reverseOnWall=true) sets vx = -abs(vx) = -1.
+    // Goomba.update must NOT negate again — vx should remain -1 after wall hit.
     const g = new Goomba(110, 210);
     g.active = true;
     g.vx = 1;
@@ -90,11 +89,13 @@ describe('Goomba — walking', () => {
     wallGrid[13][7] = 'G';
     wallGrid[12][7] = 'G';
     const mario = fakeMario();
-    const xBefore = g.x;
     g.update(wallGrid, mario, 0);
     // Goomba should remain alive after wall contact
     expect(g.alive).toBe(true);
-    // Position should have been modified by collision resolution
+    // After wall hit, vx must be negative (reversed from initial +1)
+    expect(g.vx).toBeLessThan(0);
+    // Facing must match the new direction
+    expect(g.facing).toBe(-1);
     expect(g.goombaState).toBe(GoombaState.WALKING);
   });
 });

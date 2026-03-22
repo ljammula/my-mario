@@ -47,8 +47,8 @@ export class TileRenderer {
   private grid:     TileGrid = [];
   private pool:     TileSlot[] = [];
 
-  // Map from "col,row" → pool slot index (only for currently displayed tiles)
-  private slotMap: Map<string, TileSlot> = new Map();
+  // Map from numeric key (row * LEVEL_COLS + col) → pool slot (O(1) lookup, no string alloc)
+  private slotMap: Map<number, TileSlot> = new Map();
 
   constructor(scene: Phaser.Scene, registry: typeof SpriteRegistry) {
     this.scene    = scene;
@@ -69,7 +69,7 @@ export class TileRenderer {
       slot.image.destroy();
     }
     this.pool    = [];
-    this.slotMap = new Map();
+    this.slotMap = new Map<number, TileSlot>();
 
     const poolSize = VIEWPORT_COLS * LEVEL_ROWS;
     for (let i = 0; i < poolSize; i++) {
@@ -94,44 +94,34 @@ export class TileRenderer {
     const firstCol = Math.max(0, Math.floor((cameraX - 32) / TILE_SIZE));
     const lastCol  = Math.min(LEVEL_COLS - 1, Math.ceil((cameraX + 256 + 32) / TILE_SIZE));
 
-    // Collect visible (col, row) pairs with non-empty tiles
-    const visible: { col: number; row: number; id: string }[] = [];
-    for (let col = firstCol; col <= lastCol; col++) {
-      for (let row = 0; row < LEVEL_ROWS; row++) {
-        const id = this.grid[row]?.[col];
-        if (id && id !== '.') {
-          visible.push({ col, row, id });
-        }
-      }
-    }
-
-    // Hide all pool slots first
-    for (const slot of this.pool) {
-      slot.image.setVisible(false);
-      slot.visible = false;
+    // Hide all pool slots first — no intermediate array
+    for (let i = 0; i < this.pool.length; i++) {
+      this.pool[i].image.setVisible(false);
+      this.pool[i].visible = false;
     }
     this.slotMap.clear();
 
-    // Assign visible tiles to pool slots
+    // Single-pass: assign visible tiles directly to pool slots
     let poolIdx = 0;
-    for (const { col, row, id } of visible) {
-      if (poolIdx >= this.pool.length) break; // pool exhausted (shouldn't happen with correct pool size)
+    for (let col = firstCol; col <= lastCol && poolIdx < this.pool.length; col++) {
+      for (let row = 0; row < LEVEL_ROWS; row++) {
+        const id = this.grid[row]?.[col];
+        if (!id || id === '.') continue;
+        if (poolIdx >= this.pool.length) break;
 
-      const slot     = this.pool[poolIdx++];
-      const spriteKey = this._spriteKey(id, col, row);
-      if (!spriteKey) continue;
+        const spriteKey = this._spriteKey(id, col, row);
+        if (!spriteKey) continue;
 
-      const x = col * TILE_SIZE;
-      const y = row * TILE_SIZE;
+        const slot = this.pool[poolIdx++];
+        slot.image.setTexture(spriteKey);
+        slot.image.setPosition(col * TILE_SIZE, row * TILE_SIZE);
+        slot.image.setVisible(true);
+        slot.col     = col;
+        slot.row     = row;
+        slot.visible = true;
 
-      slot.image.setTexture(spriteKey);
-      slot.image.setPosition(x, y);
-      slot.image.setVisible(true);
-      slot.col     = col;
-      slot.row     = row;
-      slot.visible = true;
-
-      this.slotMap.set(`${col},${row}`, slot);
+        this.slotMap.set(row * LEVEL_COLS + col, slot);
+      }
     }
   }
 
@@ -146,7 +136,7 @@ export class TileRenderer {
     if (row < 0 || row >= LEVEL_ROWS || col < 0 || col >= LEVEL_COLS) return;
     this.grid[row][col] = id;
 
-    const key  = `${col},${row}`;
+    const key  = row * LEVEL_COLS + col;
     const slot = this.slotMap.get(key);
     if (!slot) return; // not currently visible — will be set correctly on next update()
 

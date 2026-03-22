@@ -88,6 +88,7 @@ export class Mario extends Entity {
 
   // ── Fireballs (pre-allocated pool) ───────────────────────────────────────
   fireballs: Fireball[];
+  private _activeFireballs = 0;
 
   constructor(startX: number, startY: number) {
     super(startX, startY, SMALL_MARIO_W, SMALL_MARIO_H);
@@ -109,9 +110,9 @@ export class Mario extends Entity {
     return this.form === MarioForm.SUPER || this.form === MarioForm.FIRE;
   }
 
-  /** Number of currently active fireballs */
+  /** Number of currently active fireballs (explicit counter — no .filter() allocation) */
   get activeFireballCount(): number {
-    return this.fireballs.filter(fb => fb.alive).length;
+    return this._activeFireballs;
   }
 
   // ── Hitbox management ─────────────────────────────────────────────────────
@@ -225,6 +226,19 @@ export class Mario extends Entity {
     this.vx         = 0;
     this.grounded   = false;
     this.animState  = AnimState.DEATH;
+  }
+
+  // ── Fireball kill (called externally — keeps counter correct) ─────────────
+
+  /**
+   * Kill a specific fireball and decrement the active counter.
+   * Use this instead of setting fb.alive = false directly.
+   */
+  killFireball(fb: Fireball): void {
+    if (!fb.alive) return;
+    fb.alive = false;
+    this._activeFireballs--;
+    if (this._activeFireballs < 0) this._activeFireballs = 0;
   }
 
   // ── Stomp bounce ──────────────────────────────────────────────────────────
@@ -383,10 +397,13 @@ export class Mario extends Entity {
   // ── Fireball launch ───────────────────────────────────────────────────────
 
   private _tryFireball(): void {
-    if (this.activeFireballCount >= FIREBALL_MAX_ACTIVE) return;
+    if (this._activeFireballs >= FIREBALL_MAX_ACTIVE) return;
 
-    // Find a dead fireball from the pool to reuse
-    const fb = this.fireballs.find(f => !f.alive);
+    // Find a dead fireball slot (no .find() — manual loop, zero allocation)
+    let fb: Fireball | null = null;
+    for (let i = 0; i < this.fireballs.length; i++) {
+      if (!this.fireballs[i].alive) { fb = this.fireballs[i]; break; }
+    }
     if (!fb) return;
 
     // Launch from Mario's hand position (right or left side at chest height)
@@ -396,6 +413,7 @@ export class Mario extends Entity {
     const launchY = this.y + 4;  // chest height
 
     fb.reset(launchX, launchY, this.facing);
+    this._activeFireballs++;
   }
 
   // ── Animation state ───────────────────────────────────────────────────────
@@ -590,9 +608,16 @@ export class Mario extends Entity {
       this._tryFireball();
     }
 
-    // Update active fireballs
+    // Update active fireballs; decrement counter when one transitions to dead
     for (const fb of this.fireballs) {
-      if (fb.alive) fb.update(grid);
+      if (fb.alive) {
+        fb.update(grid);
+        if (!fb.alive) {
+          // Fireball just died this frame
+          this._activeFireballs--;
+          if (this._activeFireballs < 0) this._activeFireballs = 0;
+        }
+      }
     }
 
     // ── Step 10: Animation state ───────────────────────────────────────

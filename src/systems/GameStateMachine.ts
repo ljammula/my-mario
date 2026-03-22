@@ -248,13 +248,8 @@ export class GameStateMachine {
    */
   addScore(points: number): void {
     if (points <= 0) return;
-
-    if (this.state.score === 999_999) {
-      // Wrap: next increment after maxing out resets to 0
-      this.state.score = Math.min(points, 999_999);
-    } else {
-      this.state.score = Math.min(this.state.score + points, 999_999);
-    }
+    // Spec: score wraps to 0 if exceeded (modulo 1,000,000)
+    this.state.score = (this.state.score + points) % 1_000_000;
   }
 
   /**

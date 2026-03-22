@@ -86,7 +86,8 @@ export function getTexture(key: string): Phaser.Textures.Texture {
     throw new Error(`SpriteRegistry: scene not initialized. Call initRegistry() first.`);
   }
   if (!_scene.textures.exists(key)) {
-    throw new Error(`SpriteRegistry: texture '${key}' not found. Check SpriteData.ts SPRITE_DEFS.`);
+    console.warn(`SpriteRegistry: unknown key "${key}", using fallback`);
+    return _scene.textures.get('tile_used');
   }
   return _scene.textures.get(key);
 }

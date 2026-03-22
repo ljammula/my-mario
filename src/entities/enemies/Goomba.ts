@@ -56,7 +56,8 @@ export class Goomba extends Enemy {
     const hit = this.resolveTiles(grid);
 
     if (hit.left || hit.right) {
-      this.vx = -this.vx;
+      // resolveEnemyTileCollision already reversed vx (reverseOnWall=true).
+      // Just update facing to match the new direction.
       this.facing = this.vx > 0 ? 1 : -1;
     }
 
