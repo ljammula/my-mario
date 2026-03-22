@@ -32,6 +32,11 @@ import {
 import { Mario } from '../entities/player/Mario';
 import { Enemy } from '../entities/enemies/Enemy';
 import { Shell } from '../entities/enemies/Shell';
+import { Item } from '../entities/items/Item';
+import { Mushroom } from '../entities/items/Mushroom';
+import { FireFlower } from '../entities/items/FireFlower';
+import { Star } from '../entities/items/Star';
+import { CoinPopup } from '../entities/items/CoinPopup';
 import { Goomba } from '../entities/enemies/Goomba';
 import { KoopaTroopa } from '../entities/enemies/KoopaTroopa';
 import { PiranhaPlant } from '../entities/enemies/PiranhaPlant';
@@ -46,7 +51,7 @@ import {
   SCORE,
   POOL_ENEMIES,
 } from '../config/constants';
-import { Screen } from '../types/entities';
+import { Screen, ItemType } from '../types/entities';
 import { TileGrid, LevelData, EnemyDef } from '../types/level';
 import { EnemyType } from '../types/entities';
 
@@ -68,6 +73,10 @@ export class WorldScene extends Phaser.Scene {
   private mario!:           Mario;
   private enemies:          Enemy[]  = [];
   private shells:           Shell[]  = [];
+  private items:            Item[]   = [];
+  private coinPopups:       CoinPopup[] = [];
+  private itemImages:       Phaser.GameObjects.Image[] = [];
+  private coinPopupImages:  Phaser.GameObjects.Image[] = [];
 
   // ── Fixed timestep accumulator ─────────────────────────────────────────────
   private accumulator:      number   = 0;
@@ -143,6 +152,19 @@ export class WorldScene extends Phaser.Scene {
       this.enemyImages.push(img);
     }
 
+    // Pre-allocate item image pool (max 8 items)
+    for (let i = 0; i < 8; i++) {
+      const img = this.add.image(0, 0, 'mushroom_red');
+      img.setOrigin(0, 0).setDepth(8).setVisible(false);
+      this.itemImages.push(img);
+    }
+    // Pre-allocate coin popup image pool (max 8)
+    for (let i = 0; i < 8; i++) {
+      const img = this.add.image(0, 0, 'coin_1');
+      img.setOrigin(0, 0).setDepth(11).setVisible(false);
+      this.coinPopupImages.push(img);
+    }
+
     // Wire audio on first user interaction
     this.input.keyboard?.once('keydown', () => {
       audioSystem.init();
@@ -170,6 +192,8 @@ export class WorldScene extends Phaser.Scene {
     // Render entities each display frame
     this._renderMario();
     this._renderEnemies();
+    this._renderItems();
+    this._renderCoinPopups();
   }
 
   // ── Physics Step ──────────────────────────────────────────────────────────
@@ -256,6 +280,30 @@ export class WorldScene extends Phaser.Scene {
       shell.update(this.grid, this.mario, STEP_MS);
     }
 
+    // 5b. Item updates
+    for (const item of this.items) {
+      if (!item.alive || item.collected) continue;
+      item.update(this.grid);
+    }
+
+    // 5c. Coin popup updates
+    for (const popup of this.coinPopups) {
+      if (!popup.alive) continue;
+      popup.update();
+    }
+
+    // 5d. Collision: Mario ↔ items
+    for (const item of this.items) {
+      if (!item.alive || item.collected) continue;
+      if (entitiesOverlap(this.mario, item)) {
+        item.collected = true;
+        item.alive = false;
+        const pts = this.mario.onPowerUp(item.type);
+        this.stateMachine.addScore(pts);
+        audioSystem.playSFX('powerup_collect' as SFXKey);
+      }
+    }
+
     // 6. Collision: Mario ↔ enemies
     for (const enemy of this.enemies) {
       if (!enemy.alive || !enemy.active) continue;
@@ -338,6 +386,20 @@ export class WorldScene extends Phaser.Scene {
     }
     this.shells.length = si;
 
+    // Cull dead items
+    let ii = 0;
+    for (let i = 0; i < this.items.length; i++) {
+      if (this.items[i].alive && !this.items[i].collected) this.items[ii++] = this.items[i];
+    }
+    this.items.length = ii;
+
+    // Cull dead coin popups
+    let ci = 0;
+    for (let i = 0; i < this.coinPopups.length; i++) {
+      if (this.coinPopups[i].alive) this.coinPopups[ci++] = this.coinPopups[i];
+    }
+    this.coinPopups.length = ci;
+
     // 11. Camera update
     this.camera.update(this.mario.x, this.level.widthPx);
 
@@ -395,6 +457,34 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private _renderItems(): void {
+    for (let i = 0; i < this.itemImages.length; i++) {
+      this.itemImages[i].setVisible(false);
+    }
+    let slot = 0;
+    for (const item of this.items) {
+      if (!item.alive || item.collected || slot >= this.itemImages.length) continue;
+      const img = this.itemImages[slot++];
+      const key = item.getSpriteKey();
+      if (SpriteRegistry.hasTexture(key)) img.setTexture(key);
+      img.setPosition(item.x, item.y).setVisible(true);
+    }
+  }
+
+  private _renderCoinPopups(): void {
+    for (let i = 0; i < this.coinPopupImages.length; i++) {
+      this.coinPopupImages[i].setVisible(false);
+    }
+    let slot = 0;
+    for (const popup of this.coinPopups) {
+      if (!popup.alive || slot >= this.coinPopupImages.length) continue;
+      const img = this.coinPopupImages[slot++];
+      const key = popup.getSpriteKey();
+      if (SpriteRegistry.hasTexture(key)) img.setTexture(key);
+      img.setPosition(popup.x, popup.y).setVisible(true);
+    }
+  }
+
   // ── Block Interaction ─────────────────────────────────────────────────────
 
   private _handleBlockBonk(col: number, row: number): void {
@@ -408,7 +498,38 @@ export class WorldScene extends Phaser.Scene {
         this.grid[row][col] = TILE.USED;
         this.tileRenderer.setTile(col, row, TILE.USED);
         audioSystem.playSFX('bump' as SFXKey);
-        // SE2: spawn item based on level block data at (col, row)
+        // Spawn item from block data
+        const blockDef = this.level.blocks.find(b => b.col === col && b.row === row);
+        if (blockDef && blockDef.content) {
+          const spawnX = col * TILE_SIZE;
+          const spawnY = (row - 1) * TILE_SIZE; // one tile above the block
+          if (blockDef.content === 'coin') {
+            // Coin popup animation (not a physics item)
+            if (this.coinPopups.length < 8) {
+              this.coinPopups.push(new CoinPopup(spawnX, spawnY));
+              this.stateMachine.addCoin();
+              audioSystem.playSFX('coin' as SFXKey);
+            }
+          } else {
+            // Physics item: mushroom, fire flower, star
+            let item: Item | null = null;
+            switch (blockDef.content) {
+              case ItemType.MUSHROOM:
+                item = new Mushroom(spawnX, spawnY);
+                break;
+              case ItemType.FIRE_FLOWER:
+                item = new FireFlower(spawnX, spawnY);
+                break;
+              case ItemType.STAR:
+                item = new Star(spawnX, spawnY);
+                break;
+            }
+            if (item && this.items.length < 8) {
+              this.items.push(item);
+              audioSystem.playSFX('powerup_spawn' as SFXKey);
+            }
+          }
+        }
         this.stateMachine.addScore(0); // points from item collection handled separately
         break;
       }
@@ -492,8 +613,10 @@ export class WorldScene extends Phaser.Scene {
     this.camera.cameraX = 0;
 
     // Respawn all enemies from level data
-    this.enemies.length = 0;
-    this.shells.length  = 0;
+    this.enemies.length     = 0;
+    this.shells.length      = 0;
+    this.items.length       = 0;
+    this.coinPopups.length  = 0;
     this._spawnEnemies(this.level.enemies);
   }
 
