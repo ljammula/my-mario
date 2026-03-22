@@ -1,58 +1,96 @@
 # My Mario
 
-A Super Mario Bros (1985) web game implementation using HTML5 Canvas and vanilla JavaScript.
+A Super Mario Bros (1985) browser game — Phaser 3 + TypeScript + Vite.
 
-## How to Play
+NES-accurate physics, pixel-perfect sprites, procedural Web Audio synthesis. Deploys to GitHub Pages from `/docs`.
 
-Open `index.html` in a browser. No build step required.
+## Quick start
 
-> **Note:** Must be served over HTTP (not `file://`) due to ES module imports.
-> Quick start: `python3 -m http.server 8080` then open `http://localhost:8080`
+```bash
+make install   # install dependencies
+make dev       # start dev server at http://localhost:3000
+```
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| Arrow Left / A | Move left |
-| Arrow Right / D | Move right |
-| Arrow Down / S | Crouch (Super/Fire Mario) |
-| Space / Z | Jump (hold for higher jump) |
-| X | Run / Throw fireball (Fire Mario) |
+| ← / → Arrow | Move left / right |
+| Space / Z | Jump (hold for higher jump, release early to cut arc) |
+| X / Shift | Run · throw fireball (Fire Mario) |
+| ↓ / S | Crouch (Super / Fire Mario only) |
 | Enter | Start / Pause |
 
 ## Features
 
-- **World 1-1** full layout with pipes, brick blocks, question blocks, gaps, staircase, and flagpole
-- **Player states:** Small Mario → Super Mario (Mushroom) → Fire Mario (Fire Flower) → Invincible (Star)
-- **Enemies:** Goombas, Koopa Troopas (with shell mechanics), Piranha Plants
-- **Items:** Super Mushroom, Fire Flower, Super Star, 1-Up Mushroom, Coins
-- **Physics:** Gravity, variable-height jump, coyote time, jump buffering, momentum
-- **Scoring:** Points for stomps, coins, blocks, combos; flagpole height bonus; time bonus
-- **HUD:** Score, coin count, world, time remaining, lives
-- **Audio:** Synthesized sound effects and background music via Web Audio API (no external files)
-- **Particles:** Brick break debris, coin sparkles, score popups
+- **Physics** — momentum, variable-height jump, coyote time (4 frames), jump buffering (6 frames), skid
+- **Player forms** — Small → Super (Mushroom) → Fire (Fire Flower) → Invincible (Starman) with correct damage downgrade chain
+- **Enemies** — Goomba, Koopa Troopa (shell kick + chain kills), Piranha Plant, Shell entity
+- **World 1-1** — full 224-tile layout: pipes, brick/question blocks, gaps, staircase, flagpole, castle
+- **Scoring** — stomp combos (9th consecutive = 1-UP), flagpole height bonus, time bonus, score wraps at 999,999
+- **HUD** — score, coins, world, timer (hurry mode at ≤100s)
+- **Audio** — procedural Web Audio API synthesis, no external files
+- **Sprites** — NES-palette pixel art, RLE-encoded, pre-baked at startup (zero frame allocation)
+- **Performance** — zero heap allocation in game loop, viewport-culled tile renderer, object-pooled fireballs/particles
 
 ## Architecture
 
 ```
-index.html          — Entry point
-js/
-  constants.js      — Physics constants, tile IDs, colors, scoring tables
-  input.js          — Keyboard input with edge-triggered jump/fire flags
-  engine.js         — Game loop, state machine (TITLE/PLAYING/DEAD/WIN/GAMEOVER)
-  player.js         — Mario entity, physics, state machine, animation
-  collision.js      — AABB collision detection and resolution
-  level.js          — World 1-1 tile map, spawn points, block contents
-  enemies.js        — Goomba, KoopaTroopa, PiranhaPlant, Shell AI
-  items.js          — Mushroom, FireFlower, Star, Fireball, Coin entities
-  renderer.js       — All canvas drawing (tiles, enemies, items, HUD, screens)
-  audio.js          — Web Audio API SFX and background music
-  ui.js             — Score popups, particle effects
+src/
+  config/           — physics constants, tile IDs, scoring tables
+  types/            — shared TypeScript interfaces
+  systems/          — InputManager, TileCollision, CameraSystem,
+                      GameStateMachine, SpriteRegistry, SpriteData,
+                      AudioSystem, TileRenderer
+  entities/
+    player/         — Mario, Fireball
+    enemies/        — Enemy (base), Goomba, KoopaTroopa, Shell, PiranhaPlant
+  scenes/           — BootScene, PreloadScene, WorldScene, UIScene
+  ui/               — HUDScene
+  state/            — hudData (shared singleton)
+  data/levels/      — world1-1.ts (full level data)
 ```
 
-## Technical Details
+## Stack
 
-- Canvas: 512×480px (2× NES resolution of 256×240)
-- Target: 60fps with fixed-timestep game loop
-- No external dependencies — pure HTML5/JS
-- ES modules throughout
+| Tool | Role |
+|------|------|
+| Phaser 3 | Scene management, WebGL renderer, camera |
+| TypeScript | Strict-mode throughout |
+| Vite | Dev server, build, HMR |
+| Vitest | Test runner + coverage |
+
+Custom AABB collision — Phaser's physics engine is not used.
+
+## Make targets
+
+```bash
+make install      # npm install
+make dev          # vite dev server (port 3000)
+make build        # tsc + vite build → docs/
+make preview      # preview production build locally
+make test         # run full test suite (362 tests)
+make test-watch   # vitest watch mode
+make coverage     # test coverage report
+make deploy       # build + stage docs/ for commit
+make clean        # remove docs/ and node_modules/
+```
+
+## Deployment
+
+GitHub Pages serves from `main /docs`:
+
+```bash
+make deploy
+git add docs/
+git commit -m "deploy: $(date +%Y-%m-%d)"
+git push
+```
+
+## Technical notes
+
+- Canvas: 512×480px (2× NES logical resolution 256×240)
+- All game logic runs in logical pixels (1 tile = 16px); renderer multiplies by 2
+- Fixed 60fps physics timestep with delta accumulator (50ms cap)
+- Sprites: palette-indexed RLE arrays decoded once at boot into Phaser `RenderTexture`
+- Audio: single `AudioContext` created on first user interaction; separate music/SFX gain chains
