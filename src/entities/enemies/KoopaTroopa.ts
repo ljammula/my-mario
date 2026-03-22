@@ -189,7 +189,7 @@ export class KoopaTroopa extends Enemy {
       case KoopaState.SLIDING:
         return `koopa_shell_spin${this.animFrame % 2 + 1}`;
       case KoopaState.FLIPPED:
-        return 'koopa_dead';
+        return 'koopa_shell'; // reuse shell sprite — no separate flipped sprite
       default:
         return `koopa_walk${this.animFrame + 1}`;
     }

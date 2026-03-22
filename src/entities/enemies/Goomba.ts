@@ -106,7 +106,7 @@ export class Goomba extends Enemy {
       case GoombaState.STOMPED:
         return 'goomba_squish';
       case GoombaState.FLIPPED:
-        return 'goomba_dead';
+        return 'goomba_squish'; // reuse squish — no separate flipped sprite
       default:
         return `goomba_walk${this.animFrame + 1}`;
     }

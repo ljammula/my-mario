@@ -50,6 +50,7 @@ import {
   SCALE,
   SCORE,
   POOL_ENEMIES,
+  POOL_FIREBALLS,
 } from '../config/constants';
 import { Screen, ItemType } from '../types/entities';
 import { TileGrid, LevelData, EnemyDef } from '../types/level';
@@ -88,8 +89,9 @@ export class WorldScene extends Phaser.Scene {
   private tileRenderer!: TileRenderer;
 
   // ── Entity sprites (Phaser Images, pre-allocated) ──────────────────────────
-  private marioImage!:   Phaser.GameObjects.Image;
-  private enemyImages:   Phaser.GameObjects.Image[] = [];
+  private marioImage!:      Phaser.GameObjects.Image;
+  private enemyImages:      Phaser.GameObjects.Image[] = [];
+  private fireballImages:   Phaser.GameObjects.Image[] = [];
 
   // ── Block shake animation tracking (pre-allocated pool, max 8 simultaneous) ─
   private readonly _shakePool: Array<{ col: number; row: number; timer: number; offsetY: number }> =
@@ -171,6 +173,12 @@ export class WorldScene extends Phaser.Scene {
       img.setOrigin(0, 0).setDepth(11).setVisible(false);
       this.coinPopupImages.push(img);
     }
+    // Pre-allocate fireball image pool (max 2 active fireballs at once)
+    for (let i = 0; i < POOL_FIREBALLS; i++) {
+      const img = this.add.image(0, 0, 'fireball_1');
+      img.setOrigin(0, 0).setDepth(12).setVisible(false);
+      this.fireballImages.push(img);
+    }
     // Pre-allocate 8 score popup text objects
     for (let i = 0; i < 8; i++) {
       const t = this.add.text(0, 0, '', {
@@ -209,6 +217,7 @@ export class WorldScene extends Phaser.Scene {
 
     // Render entities each display frame
     this._renderMario();
+    this._renderFireballs();
     this._renderEnemies();
     this._renderItems();
     this._renderCoinPopups();
@@ -246,8 +255,9 @@ export class WorldScene extends Phaser.Scene {
 
     // Non-playing screens (TITLE, INTRO, WIN, GAMEOVER) — only state machine ticks
     if (gs.screen !== Screen.PLAYING) {
-      // Detect DEATH → INTRO transition: reset Mario and level for next life
-      if (gs.screen === Screen.INTRO && this._prevScreen === Screen.DEATH) {
+      // Reset level on DEATH→INTRO (respawn after death) and WIN→INTRO (loop back to 1-1)
+      if (gs.screen === Screen.INTRO &&
+          (this._prevScreen === Screen.DEATH || this._prevScreen === Screen.WIN)) {
         this._respawnPlayer();
       }
       this._prevScreen = gs.screen;
@@ -507,6 +517,20 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private _renderFireballs(): void {
+    for (let i = 0; i < this.fireballImages.length; i++) {
+      this.fireballImages[i].setVisible(false);
+    }
+    let slot = 0;
+    for (const fb of this.mario.fireballs) {
+      if (!fb.alive || slot >= this.fireballImages.length) continue;
+      const img = this.fireballImages[slot++];
+      const key = (fb as { getSpriteKey?(): string }).getSpriteKey?.() ?? 'fireball_1';
+      if (SpriteRegistry.hasTexture(key)) img.setTexture(key);
+      img.setPosition(fb.x, fb.y).setVisible(true);
+    }
+  }
+
   // ── Block Interaction ─────────────────────────────────────────────────────
 
   private _handleBlockBonk(col: number, row: number): void {
@@ -735,38 +759,6 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     this._scorePopups.length = alive;
-  }
-
-  // ── Level Builder (minimal stub — SE2 provides full level data) ───────────
-
-  private _buildLevel(): LevelData {
-    // Build an empty grid
-    const grid: TileGrid = [];
-    for (let row = 0; row < LEVEL_ROWS; row++) {
-      grid.push(new Array(LEVEL_COLS).fill(TILE.EMPTY));
-    }
-
-    // Ground rows 14 and 15
-    for (let col = 0; col < LEVEL_COLS; col++) {
-      grid[14][col] = TILE.GROUND;
-      grid[15][col] = TILE.GROUND;
-    }
-
-    return {
-      world:       1,
-      level:       1,
-      grid,
-      widthPx:     LEVEL_COLS * TILE_SIZE,
-      heightPx:    LEVEL_ROWS * TILE_SIZE,
-      cols:        LEVEL_COLS,
-      rows:        LEVEL_ROWS,
-      enemies:     [],
-      blocks:      [],
-      triggers:    [],
-      marioStartX: 48,
-      marioStartY: 13 * TILE_SIZE,
-      bgColor:     '#5C94FC',
-    };
   }
 
   // ── Public Accessors (for SE2 rendering) ───────────────────────────────────
