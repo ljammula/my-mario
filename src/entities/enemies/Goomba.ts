@@ -104,7 +104,7 @@ export class Goomba extends Enemy {
   getSpriteKey(): string {
     switch (this.goombaState) {
       case GoombaState.STOMPED:
-        return 'goomba_stomped';
+        return 'goomba_squish';
       case GoombaState.FLIPPED:
         return 'goomba_dead';
       default:

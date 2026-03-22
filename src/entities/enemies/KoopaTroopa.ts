@@ -73,6 +73,12 @@ export class KoopaTroopa extends Enemy {
         // vx was already reversed by resolveEnemyTileCollision since reverseOnWall=true
         this.facing = this.vx > 0 ? 1 : -1;
       }
+      // Advance spin animation
+      this.animTimer++;
+      if (this.animTimer >= 4) {
+        this.animTimer = 0;
+        this.animFrame = (this.animFrame + 1) % 4;
+      }
       if (this.y > TILE_SIZE * 20) {
         this.alive  = false;
         this.active = false;
@@ -181,7 +187,7 @@ export class KoopaTroopa extends Enemy {
       case KoopaState.SHELL:
         return 'koopa_shell';
       case KoopaState.SLIDING:
-        return `koopa_shell_slide${this.animFrame % 2 + 1}`;
+        return `koopa_shell_spin${this.animFrame % 2 + 1}`;
       case KoopaState.FLIPPED:
         return 'koopa_dead';
       default:

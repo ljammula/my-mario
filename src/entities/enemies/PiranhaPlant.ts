@@ -149,7 +149,7 @@ export class PiranhaPlant extends Enemy {
   }
 
   getSpriteKey(): string {
-    // Alternate between two bite frames
-    return `piranha_${this.animFrame + 1}`;
+    // Alternate between open and closed bite frames
+    return this.animFrame === 0 ? 'piranha_open' : 'piranha_closed';
   }
 }
