@@ -72,6 +72,9 @@ export class WorldScene extends Phaser.Scene {
   // ── Fixed timestep accumulator ─────────────────────────────────────────────
   private accumulator:      number   = 0;
 
+  // ── Previous screen state (for transition detection) ───────────────────────
+  private _prevScreen:      Screen   = Screen.TITLE;
+
   // ── TileRenderer (SE2) ─────────────────────────────────────────────────────
   private tileRenderer!: TileRenderer;
 
@@ -176,6 +179,7 @@ export class WorldScene extends Phaser.Scene {
 
     // Paused: no physics, but still poll input for unpause
     if (gs.screen === Screen.PAUSED) {
+      this._prevScreen = gs.screen;
       const input = this.inputManager.pollInput();
       this.stateMachine.update(input);
       return;
@@ -191,6 +195,7 @@ export class WorldScene extends Phaser.Scene {
           this.level.widthPx
         );
       }
+      this._prevScreen = gs.screen;
       const input = this.inputManager.pollInput();
       this.stateMachine.update(input);
       return;
@@ -198,11 +203,17 @@ export class WorldScene extends Phaser.Scene {
 
     // Non-playing screens (TITLE, INTRO, WIN, GAMEOVER) — only state machine ticks
     if (gs.screen !== Screen.PLAYING) {
+      // Detect DEATH → INTRO transition: reset Mario and level for next life
+      if (gs.screen === Screen.INTRO && this._prevScreen === Screen.DEATH) {
+        this._respawnPlayer();
+      }
+      this._prevScreen = gs.screen;
       const input = this.inputManager.pollInput();
       this.stateMachine.update(input);
       this._updateHUD();
       return;
     }
+    this._prevScreen = gs.screen;
 
     // ── PLAYING ────────────────────────────────────────────────────────────
 
@@ -469,6 +480,21 @@ export class WorldScene extends Phaser.Scene {
     hudData.lives  = gs.lives;
     hudData.hurry  = gs.hurryMode;
     hudData.screen = gs.screen;
+  }
+
+  // ── Player Respawn ────────────────────────────────────────────────────────
+
+  private _respawnPlayer(): void {
+    // Reset Mario to start position and clear all state
+    this.mario.reset(this.level.marioStartX, this.level.marioStartY);
+
+    // Reset camera to beginning of level
+    this.camera.cameraX = 0;
+
+    // Respawn all enemies from level data
+    this.enemies.length = 0;
+    this.shells.length  = 0;
+    this._spawnEnemies(this.level.enemies);
   }
 
   // ── Enemy Spawning ────────────────────────────────────────────────────────

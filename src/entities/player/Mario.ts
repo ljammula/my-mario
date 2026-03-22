@@ -228,6 +228,44 @@ export class Mario extends Entity {
     this.animState  = AnimState.DEATH;
   }
 
+  /**
+   * Reset Mario to starting position and clear all state.
+   * Called when respawning after death (INTRO screen).
+   */
+  reset(startX: number, startY: number): void {
+    this.x = startX;
+    this.y = startY;
+    this.vx = 0;
+    this.vy = 0;
+    this.w = SMALL_MARIO_W;
+    this.h = SMALL_MARIO_H;
+    this.form = MarioForm.SMALL;
+    this.animState = AnimState.IDLE;
+    this.facing = 1;
+    this.grounded = false;
+    this.coyoteTimer = 0;
+    this.jumpBufferTimer = 0;
+    this.isJumping = false;
+    this.crouching = false;
+    this.starInvincible = false;
+    this.starTimer = 0;
+    this.hurtInvincible = false;
+    this.hurtTimer = 0;
+    this.dead = false;
+    this.deathTimer = 0;
+    this.frameCounter = 0;
+    this.walkFrame = 0;
+    this.walkFrameTimer = 0;
+    this.growTimer = 0;
+    this.flickerVisible = true;
+    this.headBonkCol = -1;
+    this.headBonkRow = -1;
+    this._activeFireballs = 0;
+    for (const fb of this.fireballs) {
+      fb.alive = false;
+    }
+  }
+
   // ── Fireball kill (called externally — keeps counter correct) ─────────────
 
   /**
