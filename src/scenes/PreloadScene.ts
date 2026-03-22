@@ -25,12 +25,9 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Initialize SpriteRegistry so SE1 modules can call getTexture()
+    // Initialize SpriteRegistry — bakes ALL NES sprite textures into Phaser cache.
+    // Must be called before WorldScene starts. Zero per-frame allocation after this.
     initRegistry(this);
-
-    // SE2: call your sprite baking system here.
-    // Example: bakeAllSprites(this);
-    // This must be called before WorldScene starts.
 
     // Start the main gameplay scene and the parallel HUD scene
     this.scene.start('WorldScene');
