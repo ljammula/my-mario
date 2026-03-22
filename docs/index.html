@@ -2,15 +2,149 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>My Mario</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      touch-action: none;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 130px);
+      width: auto;
+      height: auto;
+    }
+    #touch-controls {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 130px;
+      padding: env(safe-area-inset-bottom, 8px) 16px 8px;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 100;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+    @media (pointer: coarse) {
+      #touch-controls {
+        display: flex;
+      }
+    }
+    @media (pointer: coarse) and (orientation: landscape) {
+      canvas {
+        max-height: 100vh;
+      }
+      #touch-controls {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    }
+    .touch-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.5);
+      background: rgba(50, 50, 50, 0.75);
+      color: #fff;
+      font-size: 22px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.05s, transform 0.05s;
+    }
+    .touch-btn:active,
+    .touch-btn.pressed {
+      background: rgba(150, 150, 150, 0.9);
+      border-color: rgba(255, 255, 255, 0.9);
+      transform: scale(0.92);
+    }
+    #dpad {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+    #btn-left,
+    #btn-right {
+      font-size: 28px;
+    }
+    #action-buttons {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    #btn-a {
+      background: rgba(20, 120, 20, 0.75);
+      border-color: rgba(100, 220, 100, 0.7);
+      width: 70px;
+      height: 70px;
+    }
+    #btn-a.pressed {
+      background: rgba(40, 180, 40, 0.9);
+    }
+    #btn-b {
+      background: rgba(160, 20, 20, 0.75);
+      border-color: rgba(220, 100, 100, 0.7);
+      width: 60px;
+      height: 60px;
+    }
+    #btn-b.pressed {
+      background: rgba(220, 40, 40, 0.9);
+    }
+    #btn-start {
+      width: 52px;
+      height: 30px;
+      border-radius: 15px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      background: rgba(30, 30, 70, 0.75);
+      border-color: rgba(150, 150, 255, 0.6);
+    }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="512" height="480"></canvas>
+  <div id="touch-controls">
+    <div id="dpad">
+      <button class="touch-btn" id="btn-left" aria-label="Left">◄</button>
+      <button class="touch-btn" id="btn-right" aria-label="Right">►</button>
+    </div>
+    <button class="touch-btn" id="btn-start" aria-label="Start/Pause">START</button>
+    <div id="action-buttons">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <button class="touch-btn" id="btn-b" aria-label="Run/Fire">B</button>
+        <span style="color:rgba(255,255,255,0.5);font-size:9px">RUN</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <button class="touch-btn" id="btn-a" aria-label="Jump">A</button>
+        <span style="color:rgba(255,255,255,0.5);font-size:9px">JUMP</span>
+      </div>
+    </div>
+  </div>
   <script src="js/game.js"></script>
 </body>
 </html>
