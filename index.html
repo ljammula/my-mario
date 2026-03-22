@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Super Mario Bros</title>
   <style>
-    /* Full-page black background; canvas centered and pixel-perfect */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -21,41 +20,15 @@
       overflow: hidden;
     }
 
-    #gameCanvas {
-      /* 512×480 canvas — NES 256×240 at 2× scale */
-      width: 512px;
-      height: 480px;
+    canvas {
       display: block;
-
-      /* Crisp pixel rendering — no bilinear smoothing */
       image-rendering: pixelated;
-      image-rendering: crisp-edges;     /* Firefox */
+      image-rendering: crisp-edges;
       image-rendering: -moz-crisp-edges;
-
-      /* Thin outline so canvas is visible on black background */
-      outline: 2px solid #222;
-    }
-
-    /* Focus ring removal — game captures all keyboard input */
-    #gameCanvas:focus {
-      outline: none;
     }
   </style>
 </head>
 <body>
-  <!--
-    Canvas element: 512×480 px (2× of logical NES resolution 256×240).
-    All game drawing happens here; no other DOM elements are used during gameplay.
-  -->
-  <canvas id="gameCanvas" width="512" height="480" tabindex="0"></canvas>
-
-  <!--
-    engine.js is the sole entry point.
-    It imports all other modules (constants, input, player, collision, level, renderer, audio)
-    using ES module static/dynamic imports.
-    The "type=module" attribute enables ES module semantics and defers execution
-    until after the DOM is parsed.
-  -->
-  <script type="module" src="js/engine.js"></script>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
