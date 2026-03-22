@@ -83,6 +83,6 @@ export class Shell extends Enemy {
   }
 
   getSpriteKey(): string {
-    return `koopa_shell_slide${(this.animFrame % 2) + 1}`;
+    return `koopa_shell_spin${(this.animFrame % 2) + 1}`;
   }
 }
