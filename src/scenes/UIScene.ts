@@ -122,9 +122,11 @@ export class UIScene extends Phaser.Scene {
       case Screen.WIN:
         this._showOverlay('YOU WIN!', 'PRESS ENTER TO CONTINUE');
         break;
+      case Screen.INTRO:
+        this._showOverlay(`WORLD  ${hudData.world}`, `× ${hudData.lives}`);
+        break;
       case Screen.DEATH:
-        // Show lives remaining briefly; no big overlay
-        this._hideOverlay();
+        this._showOverlay('', `× ${hudData.lives}`);
         break;
       default:
         this._hideOverlay();
