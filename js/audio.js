@@ -8,6 +8,7 @@ const AudioSystem = (() => {
   let musicGain = null;
   let musicPlaying = false;
   let audioReady = false;
+  let currentMusicName = null;
 
   function init() {
     if (audioReady) return;
@@ -150,12 +151,12 @@ const AudioSystem = (() => {
 
   function playMusic(name) {
     if (!audioReady || !ctx) return;
-    if (name !== 'overworld') return;
+    currentMusicName = name;
+    if (name !== 'overworld' && name !== 'underground') return;
     stopMusic();
     musicPlaying = true;
 
-    // Overworld theme approximation (freely composed, similar feel)
-    const melody = [
+    const overworldMelody = [
       // bar 1
       [659,0.15],[659,0.15],[0,0.15],[659,0.15],[0,0.15],[523,0.15],[659,0.15],
       [784,0.30],[0,0.30],[392,0.30],
@@ -174,6 +175,22 @@ const AudioSystem = (() => {
       [196,0.20],[262,0.20],[330,0.20],[392,0.15],
       [330,0.15],[262,0.15],[0,0.30],
     ];
+
+    const undergroundMelody = [
+      // Underground theme approximation
+      [262,0.12],[262,0.12],[262,0.18],[0,0.06],
+      [208,0.24],[233,0.24],[262,0.18],[0,0.06],[208,0.24],
+      [233,0.12],[0,0.20],[196,0.24],[0,0.12],[233,0.24],
+      [262,0.24],[233,0.24],[196,0.24],[175,0.30],[0,0.20],
+      [165,0.24],[0,0.12],[208,0.24],[233,0.24],[0,0.12],
+      [262,0.24],[294,0.30],[0,0.12],[311,0.24],[294,0.12],
+      [0,0.12],[262,0.24],[0,0.12],[247,0.24],[233,0.36],
+      [0,0.36],[196,0.18],[0,0.06],[196,0.18],[0,0.06],[196,0.24],
+      [0,0.12],[175,0.24],[196,0.24],[208,0.18],[0,0.12],
+      [196,0.18],[0,0.06],[175,0.24],[0,0.12],[165,0.30],[0,0.30],
+    ];
+
+    const melody = name === 'underground' ? undergroundMelody : overworldMelody;
 
     function startScheduling() {
       if (!musicPlaying) return;
@@ -232,7 +249,15 @@ const AudioSystem = (() => {
   }
 
   function resumeMusic() {
-    if (ctx && ctx.state === 'suspended') ctx.resume();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => {
+        if (currentMusicName) {
+          stopMusic();
+          playMusic(currentMusicName);
+        }
+      });
+    }
   }
 
   return { init, playSFX, playMusic, stopMusic, pauseMusic, resumeMusic };

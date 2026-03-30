@@ -400,7 +400,7 @@ function drawCoinPopup(ctx, item) {
 }
 
 function drawPiranha(ctx) {
-  if (!piranha.visible) return;
+  if (!piranha || !piranha.visible) return;
   const x = wx(piranha.x);
   const y = wy(piranha.y);
   const s = SCALE;
@@ -440,7 +440,7 @@ function drawHUD(ctx) {
   ctx.fillStyle = '#FFFFFF';
 
   ctx.fillText('WORLD', 296, 10);
-  ctx.fillText('1-1', 316, 28);
+  ctx.fillText('1-' + currentLevel, 316, 28);
 
   ctx.fillText('TIME', 400, 10);
   ctx.fillText(String(Math.max(0, Math.ceil(gameTimer / 60))).padStart(3,'0'), 420, 28);
@@ -451,7 +451,7 @@ function drawHUD(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  ctx.fillStyle = '#5C94FC';
+  ctx.fillStyle = currentLevel === 2 ? '#000000' : '#5C94FC';
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 
@@ -479,7 +479,7 @@ function drawIntroScreen(ctx) {
   ctx.font = '24px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('WORLD 1-1', CANVAS_W/2, CANVAS_H/2 - 30);
+  ctx.fillText('WORLD 1-' + currentLevel, CANVAS_W/2, CANVAS_H/2 - 30);
   ctx.font = '16px monospace';
   ctx.fillText('\u2665 \u00D7 ' + lives, CANVAS_W/2, CANVAS_H/2 + 20);
 }
