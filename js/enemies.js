@@ -72,6 +72,7 @@ function updateKoopa(k) {
 }
 
 function updatePiranha() {
+  if (!piranha) return;
   const pipeX    = 97 * TILE;
   const marioNear = Math.abs(mario.x - pipeX) < TILE;
 
