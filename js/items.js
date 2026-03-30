@@ -111,9 +111,10 @@ function collectItem(item) {
   } else if (item.type === 'fireflower') {
     score += 1000;
     if (mario.form !== 'fire') {
+      const wasSmall = mario.form === 'small';
       mario.form = 'fire';
       mario.h    = 24;
-      if (mario.form === 'small') mario.y -= 8;
+      if (wasSmall) mario.y -= 8;
     }
   } else if (item.type === 'star') {
     score         += 1000;

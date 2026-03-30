@@ -22,7 +22,6 @@ function handleHeadBonk(col, row) {
         timer: 30,
       });
     } else if (content === 'mushroom' || content === 'flower') {
-      score += 1000;
       if (mario.form === 'small') {
         items.push({
           type: 'mushroom',
