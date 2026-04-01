@@ -19,12 +19,14 @@ function update() {
       if (stateTimer <= 0) {
         gameState = STATE.PLAYING;
         AudioSystem.init();
-        AudioSystem.playMusic('overworld');
+        AudioSystem.playMusic(currentLevel === 2 ? 'underground' : 'overworld');
         musicStarted = true;
       }
       if (isPressed(['Enter'])) {
         gameState = STATE.PLAYING;
-        AudioSystem.playMusic('overworld');
+        AudioSystem.init();
+        AudioSystem.playMusic(currentLevel === 2 ? 'underground' : 'overworld');
+        musicStarted = true;
       }
       break;
 
@@ -74,6 +76,7 @@ function update() {
     case STATE.WIN:
       stateTimer--;
       if (stateTimer <= 0) {
+        currentLevel = currentLevel === 1 ? 2 : 1;
         gameState    = STATE.INTRO;
         stateTimer   = 3 * 60;
         resetLevel();

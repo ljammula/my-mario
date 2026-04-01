@@ -7,7 +7,7 @@ function handleHeadBonk(col, row) {
   if (tile === 'Q') {
     AudioSystem.playSFX('bump');
     const key     = `${col},${row}`;
-    const content = Q_CONTENTS[key];
+    const content = currentQContents[key];
     grid[row][col] = 'U'; // mark as used
     if (content === 'coin') {
       score += 200;
