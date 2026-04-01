@@ -3,6 +3,8 @@
 // ============================================================
 
 let gameState = STATE.TITLE;
+let currentLevel = 1;
+let currentQContents = null;
 let grid      = null;
 let score     = 0;
 let coins     = 0;
@@ -78,20 +80,34 @@ function createEnemyKoopa(col, row) {
 
 function spawnEnemies() {
   enemies = [];
-  // Goombas — clear of all pipes
-  const goombas = [
-    [22,13],[23,13],[41,13],[43,13],[80,13],[81,13],
-    [107,13],[108,13],[110,13],[111,13],[149,13],[150,13],[153,13],[154,13]
-  ];
-  for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r));
-
-  // Koopa Troopas — col 60 is clear of pipe 4 (cols 57-58)
-  enemies.push(createEnemyKoopa(60, 13));
-  enemies.push(createEnemyKoopa(128, 13));
+  if (currentLevel === 1) {
+    const goombas = [
+      [22,13],[23,13],[41,13],[43,13],[80,13],[81,13],
+      [107,13],[108,13],[110,13],[111,13],[149,13],[150,13],[153,13],[154,13]
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r));
+    enemies.push(createEnemyKoopa(60, 13));
+    enemies.push(createEnemyKoopa(128, 13));
+  } else {
+    // World 1-2 enemies
+    const goombas = [
+      [6,12],[7,12],[15,12],[16,12],
+      [26,12],[27,12],[35,12],[36,12],
+      [52,12],[53,12],[68,12],[69,12],
+      [78,12],[79,12],[90,12],[91,12],
+      [110,12],[111,12],[130,12],[131,12],
+      [160,12],[161,12],[172,12],[173,12],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r));
+    enemies.push(createEnemyKoopa(44, 12));
+    enemies.push(createEnemyKoopa(100, 12));
+    enemies.push(createEnemyKoopa(145, 12));
+  }
 }
 
 function resetLevel() {
-  grid             = buildLevel();
+  grid             = currentLevel === 2 ? buildLevel2() : buildLevel();
+  currentQContents = currentLevel === 2 ? Q_CONTENTS_L2 : Q_CONTENTS;
   mario            = createMario();
   cameraX          = 0;
   gameTimer        = 400 * 60;
@@ -99,14 +115,18 @@ function resetLevel() {
   items            = [];
   fireballs        = [];
   spawnEnemies();
-  piranha = {
-    x: 97 * TILE + 4,
-    y: 10 * TILE,
-    w: 8, h: 16,
-    timer: 0,
-    state: 'hidden',
-    visible: false,
-    baseY:   10 * TILE,
-    targetY:  8 * TILE,
-  };
+  if (currentLevel === 1) {
+    piranha = {
+      x: 97 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+    };
+  } else {
+    piranha = null;
+  }
 }
