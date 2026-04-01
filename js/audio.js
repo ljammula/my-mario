@@ -4,9 +4,8 @@
 
 const AudioSystem = (() => {
   let ctx = null;
-  let musicNode = null;
   let musicGain = null;
-  let musicPlaying = false;
+  let musicVersion = 0;   // incremented on every stopMusic/playMusic call
   let audioReady = false;
   let currentMusicName = null;
 
@@ -17,7 +16,14 @@ const AudioSystem = (() => {
       audioReady = true;
     } catch(e) {
       console.warn('Web Audio not available');
+      return;
     }
+    // Resume context on any user interaction — handles browsers that
+    // re-suspend the context after tab blur or delayed gesture detection.
+    const resumeCtx = () => { if (ctx && ctx.state === 'suspended') ctx.resume(); };
+    document.addEventListener('keydown',    resumeCtx);
+    document.addEventListener('touchstart', resumeCtx);
+    document.addEventListener('click',      resumeCtx);
   }
 
   function playSFX(name) {
@@ -149,54 +155,68 @@ const AudioSystem = (() => {
     }
   }
 
+  const overworldMelody = [
+    // bar 1
+    [659,0.15],[659,0.15],[0,0.15],[659,0.15],[0,0.15],[523,0.15],[659,0.15],
+    [784,0.30],[0,0.30],[392,0.30],
+    // bar 2
+    [523,0.30],[0,0.15],[392,0.30],[0,0.15],[330,0.30],
+    [0,0.15],[440,0.15],[494,0.15],[466,0.15],[440,0.15],
+    [392,0.20],[659,0.20],[784,0.20],[880,0.15],
+    [698,0.15],[784,0.15],[0,0.08],[659,0.15],
+    [523,0.15],[587,0.15],[494,0.15],[0,0.30],
+    // bar 3
+    [523,0.30],[0,0.15],[392,0.30],[0,0.15],[330,0.30],
+    [0,0.45],[196,0.15],[196,0.15],[196,0.15],
+    [196,0.15],[0,0.15],[196,0.15],[0,0.15],[247,0.15],
+    [0,0.30],[262,0.15],[0,0.30],[247,0.15],
+    [0,0.15],[233,0.15],[0,0.30],[220,0.15],
+    [196,0.20],[262,0.20],[330,0.20],[392,0.15],
+    [330,0.15],[262,0.15],[0,0.30],
+  ];
+
+  const undergroundMelody = [
+    // Underground theme approximation
+    [262,0.12],[262,0.12],[262,0.18],[0,0.06],
+    [208,0.24],[233,0.24],[262,0.18],[0,0.06],[208,0.24],
+    [233,0.12],[0,0.20],[196,0.24],[0,0.12],[233,0.24],
+    [262,0.24],[233,0.24],[196,0.24],[175,0.30],[0,0.20],
+    [165,0.24],[0,0.12],[208,0.24],[233,0.24],[0,0.12],
+    [262,0.24],[294,0.30],[0,0.12],[311,0.24],[294,0.12],
+    [0,0.12],[262,0.24],[0,0.12],[247,0.24],[233,0.36],
+    [0,0.36],[196,0.18],[0,0.06],[196,0.18],[0,0.06],[196,0.24],
+    [0,0.12],[175,0.24],[196,0.24],[208,0.18],[0,0.12],
+    [196,0.18],[0,0.06],[175,0.24],[0,0.12],[165,0.30],[0,0.30],
+  ];
+
   function playMusic(name) {
     if (!audioReady || !ctx) return;
     currentMusicName = name;
     if (name !== 'overworld' && name !== 'underground') return;
-    stopMusic();
-    musicPlaying = true;
 
-    const overworldMelody = [
-      // bar 1
-      [659,0.15],[659,0.15],[0,0.15],[659,0.15],[0,0.15],[523,0.15],[659,0.15],
-      [784,0.30],[0,0.30],[392,0.30],
-      // bar 2
-      [523,0.30],[0,0.15],[392,0.30],[0,0.15],[330,0.30],
-      [0,0.15],[440,0.15],[494,0.15],[466,0.15],[440,0.15],
-      [392,0.20],[659,0.20],[784,0.20],[880,0.15],
-      [698,0.15],[784,0.15],[0,0.08],[659,0.15],
-      [523,0.15],[587,0.15],[494,0.15],[0,0.30],
-      // bar 3
-      [523,0.30],[0,0.15],[392,0.30],[0,0.15],[330,0.30],
-      [0,0.45],[196,0.15],[196,0.15],[196,0.15],
-      [196,0.15],[0,0.15],[196,0.15],[0,0.15],[247,0.15],
-      [0,0.30],[262,0.15],[0,0.30],[247,0.15],
-      [0,0.15],[233,0.15],[0,0.30],[220,0.15],
-      [196,0.20],[262,0.20],[330,0.20],[392,0.15],
-      [330,0.15],[262,0.15],[0,0.30],
-    ];
+    // Increment version before stopMusic so the old loop sees a stale version
+    // even if its setTimeout fires synchronously before we return.
+    const version = ++musicVersion;
 
-    const undergroundMelody = [
-      // Underground theme approximation
-      [262,0.12],[262,0.12],[262,0.18],[0,0.06],
-      [208,0.24],[233,0.24],[262,0.18],[0,0.06],[208,0.24],
-      [233,0.12],[0,0.20],[196,0.24],[0,0.12],[233,0.24],
-      [262,0.24],[233,0.24],[196,0.24],[175,0.30],[0,0.20],
-      [165,0.24],[0,0.12],[208,0.24],[233,0.24],[0,0.12],
-      [262,0.24],[294,0.30],[0,0.12],[311,0.24],[294,0.12],
-      [0,0.12],[262,0.24],[0,0.12],[247,0.24],[233,0.36],
-      [0,0.36],[196,0.18],[0,0.06],[196,0.18],[0,0.06],[196,0.24],
-      [0,0.12],[175,0.24],[196,0.24],[208,0.18],[0,0.12],
-      [196,0.18],[0,0.06],[175,0.24],[0,0.12],[165,0.30],[0,0.30],
-    ];
+    // Tear down any existing gain node
+    if (musicGain) {
+      try { musicGain.disconnect(); } catch(e) {}
+      musicGain = null;
+    }
 
     const melody = name === 'underground' ? undergroundMelody : overworldMelody;
+    const totalDur = melody.reduce((s, [, d]) => s + d, 0);
 
     function startScheduling() {
-      if (!musicPlaying) return;
-      musicGain = ctx.createGain();
-      musicGain.gain.value = 0.08;
-      musicGain.connect(ctx.destination);
+      // Bail out if a newer playMusic call has already taken over
+      if (version !== musicVersion) return;
+
+      // Capture the gain node locally so scheduleMelody always uses
+      // the node from THIS session, even if musicGain is replaced later.
+      const gain = ctx.createGain();
+      gain.gain.value = 0.08;
+      gain.connect(ctx.destination);
+      musicGain = gain;
 
       function scheduleMelody(startTime) {
         let t = startTime;
@@ -209,7 +229,7 @@ const AudioSystem = (() => {
             g.gain.setValueAtTime(0.8, t);
             g.gain.linearRampToValueAtTime(0, t + dur * 0.9);
             osc.connect(g);
-            g.connect(musicGain);
+            g.connect(gain);   // closed over local gain, not outer musicGain
             osc.start(t);
             osc.stop(t + dur);
           }
@@ -218,15 +238,16 @@ const AudioSystem = (() => {
         return t;
       }
 
-      const totalDur = melody.reduce((s, [, d]) => s + d, 0);
       let endTime = scheduleMelody(ctx.currentTime + 0.05);
 
       function scheduleLoop() {
-        if (!musicPlaying) return;
+        // If stopMusic/playMusic was called since we started, bail out
+        if (version !== musicVersion) return;
         endTime = scheduleMelody(endTime);
-        setTimeout(scheduleLoop, totalDur * 1000 * 0.9);
+        // Reschedule at 80% of total duration to ensure overlap-free looping
+        setTimeout(scheduleLoop, totalDur * 1000 * 0.8);
       }
-      setTimeout(scheduleLoop, totalDur * 1000 * 0.9);
+      setTimeout(scheduleLoop, totalDur * 1000 * 0.8);
     }
 
     if (ctx.state === 'suspended') {
@@ -237,7 +258,8 @@ const AudioSystem = (() => {
   }
 
   function stopMusic() {
-    musicPlaying = false;
+    // Invalidate any running scheduleLoop by bumping the version
+    musicVersion++;
     if (musicGain) {
       try { musicGain.disconnect(); } catch(e) {}
       musicGain = null;
@@ -252,10 +274,7 @@ const AudioSystem = (() => {
     if (!ctx) return;
     if (ctx.state === 'suspended') {
       ctx.resume().then(() => {
-        if (currentMusicName) {
-          stopMusic();
-          playMusic(currentMusicName);
-        }
+        if (currentMusicName) playMusic(currentMusicName);
       });
     }
   }
