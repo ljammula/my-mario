@@ -8,6 +8,7 @@ function update() {
   switch(gameState) {
     case STATE.TITLE:
       if (isPressed(['Enter'])) {
+        AudioSystem.init();   // unlock AudioContext during user gesture
         gameState  = STATE.INTRO;
         stateTimer = 3 * 60;
         resetLevel();
