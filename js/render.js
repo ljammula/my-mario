@@ -43,6 +43,19 @@ function drawTile(ctx, id, col, row) {
       ctx.fillRect(sx + 3*sz/4, sy + sz/2 + 2, 2, sz/2 - 2);
       break;
     }
+    case 'M': {
+      // Athletic platform: warm mushroom-cap look for World 1-3.
+      ctx.fillStyle = '#D2691E';
+      ctx.fillRect(sx, sy + 4, sz, sz - 4);
+      ctx.fillStyle = '#F4A460';
+      ctx.fillRect(sx, sy, sz, 6);
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(sx, sy + 6, sz, 2);
+      ctx.fillRect(sx, sy + sz - 2, sz, 2);
+      ctx.fillRect(sx, sy + 8, 2, sz - 8);
+      ctx.fillRect(sx + sz - 2, sy + 8, 2, sz - 8);
+      break;
+    }
     case 'Q': {
       ctx.fillStyle = '#FF8C00';
       ctx.fillRect(sx, sy, sz, sz);
@@ -448,10 +461,47 @@ function drawHUD(ctx) {
   ctx.fillText('\u2665\u00D7' + lives, 100, 10);
 }
 
+function drawControlsHelpOverlay(ctx) {
+  const panelW = 188;
+  const panelH = 86;
+  const panelX = CANVAS_W - panelW - 12;
+  const panelY = 56;
+  const lines = [
+    'CONTROLS',
+    '\u2190/\u2192  MOVE',
+    'SPACE/Z  JUMP',
+    'ENTER  START/PAUSE',
+  ];
+
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(panelX, panelY, panelW, panelH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(panelX + 0.5, panelY + 0.5, panelW - 1, panelH - 1);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText(lines[0], panelX + 10, panelY + 8);
+
+  ctx.font = '10px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  for (let i = 1; i < lines.length; i++) {
+    ctx.fillText(lines[i], panelX + 10, panelY + 8 + i * 18);
+  }
+}
+
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  ctx.fillStyle = currentLevel === 2 ? '#000000' : '#5C94FC';
+  if (currentArea === 'hidden' || currentLevel === 2) {
+    ctx.fillStyle = '#000000';
+  } else if (currentLevel === 3) {
+    ctx.fillStyle = '#79B8FF';
+  } else {
+    ctx.fillStyle = '#5C94FC';
+  }
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 
@@ -572,6 +622,7 @@ function render(ctx) {
   drawPiranha(ctx);
   drawMario(ctx);
   drawHUD(ctx);
+  if (gameState === STATE.PLAYING || gameState === STATE.PAUSED) drawControlsHelpOverlay(ctx);
 
   if (gameState === STATE.PAUSED) drawPausedOverlay(ctx);
   if (gameState === STATE.WIN)    drawWinScreen(ctx);

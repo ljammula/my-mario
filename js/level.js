@@ -273,3 +273,204 @@ function buildLevel2() {
 
   return grid;
 }
+
+// Q-block contents for World 1-3 main area
+const Q_CONTENTS_L3_MAIN = {
+  '26,10': 'coin',
+  '42,8':  'coin',
+  '54,11': 'mushroom',
+  '65,9':  'coin',
+  '87,10': 'coin',
+  '102,8': 'star',
+  '116,10':'coin',
+  '134,9': 'coin',
+  '143,7': 'mushroom',
+  '170,10':'coin',
+  '181,8': 'coin',
+};
+
+// Q-block contents for World 1-3 hidden area
+const Q_CONTENTS_L3_HIDDEN = {
+  '30,8':  'coin',
+  '32,8':  'coin',
+  '34,8':  'coin',
+  '58,6':  'coin',
+  '60,6':  'coin',
+  '62,6':  'coin',
+  '100,7': 'coin',
+  '102,7': 'coin',
+  '132,6': 'coin',
+  '134,6': 'star',
+  '166,8': 'coin',
+  '168,8': 'coin',
+};
+
+function buildLevel3Main() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) {
+    grid.push(new Array(LEVEL_COLS).fill('.'));
+  }
+
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) {
+      grid[row][col] = id;
+    }
+  }
+
+  // Ground segments with frequent gaps to emphasize platforming.
+  const groundSegs = [
+    [0, 24], [29, 45], [50, 67], [74, 93],
+    [98, 117], [126, 152], [160, 183], [190, 197], [210, 223],
+  ];
+  for (const [start, end] of groundSegs) {
+    for (let c = start; c <= end; c++) {
+      setTile(c, 13, 'G');
+      setTile(c, 14, 'G');
+    }
+  }
+
+  // Athletic mushroom-like platforms.
+  const mushroomPlatforms = [
+    [26, 33, 10],
+    [38, 46, 8],
+    [53, 58, 11],
+    [62, 71, 9],
+    [84, 90, 10],
+    [100, 108, 8],
+    [113, 119, 10],
+    [128, 138, 9],
+    [142, 148, 7],
+    [166, 174, 10],
+    [178, 186, 8],
+    [194, 200, 9],
+  ];
+  for (const [start, end, row] of mushroomPlatforms) {
+    for (let c = start; c <= end; c++) setTile(c, row, 'M');
+  }
+
+  // Pipes: [colL, topRow, hasPiranha]
+  const pipes = [
+    [35, 11, false],
+    [75, 10, true],
+    [120, 11, false], // hidden-area entry
+    [154, 10, false],
+  ];
+  for (const [c, topRow] of pipes) {
+    setTile(c,   topRow, 'PT');
+    setTile(c+1, topRow, 'PR');
+    for (let r = topRow + 1; r <= 13; r++) {
+      setTile(c,   r, 'PL');
+      setTile(c+1, r, 'PB');
+    }
+  }
+
+  // Question blocks.
+  const qBlocks = [
+    [26,10],[42,8],[54,11],[65,9],[87,10],[102,8],
+    [116,10],[134,9],[143,7],[170,10],[181,8],
+  ];
+  for (const [c, r] of qBlocks) setTile(c, r, 'Q');
+
+  // Supporting bricks around reward blocks.
+  const brickRanges = [
+    [24, 28, 10],
+    [40, 44, 8],
+    [63, 67, 9],
+    [100, 104, 8],
+    [132, 136, 9],
+    [141, 145, 7],
+    [168, 172, 10],
+    [179, 183, 8],
+  ];
+  for (const [start, end, row] of brickRanges) {
+    for (let c = start; c <= end; c++) {
+      if (grid[row][c] !== 'Q') setTile(c, row, 'B');
+    }
+  }
+
+  // End staircase + flat run-up.
+  setTile(198, 13, 'H'); setTile(198, 14, 'H');
+  for (let r = 12; r <= 14; r++) setTile(199, r, 'H');
+  for (let r = 11; r <= 14; r++) setTile(200, r, 'H');
+  for (let r = 10; r <= 14; r++) setTile(201, r, 'H');
+  for (let r =  9; r <= 14; r++) setTile(202, r, 'H');
+  for (let r =  8; r <= 14; r++) setTile(203, r, 'H');
+  for (let r =  7; r <= 14; r++) setTile(204, r, 'H');
+  for (let r =  6; r <= 14; r++) setTile(205, r, 'H');
+  for (let c = 206; c <= 209; c++) {
+    setTile(c, 13, 'H');
+    setTile(c, 14, 'H');
+  }
+
+  // Flagpole.
+  setTile(210, 4, 'FF');
+  for (let r = 5; r <= 13; r++) setTile(210, r, 'FP');
+
+  // Castle.
+  for (let c = 212; c <= 223; c += 2) setTile(c, 8, 'CA');
+  for (let r = 9; r <= 11; r++) {
+    for (let c = 212; c <= 223; c++) setTile(c, r, 'CA');
+  }
+  for (let r = 12; r <= 13; r++) {
+    for (let c = 212; c <= 223; c++) {
+      if (c === 216 || c === 217) setTile(c, r, 'CD');
+      else setTile(c, r, 'CA');
+    }
+  }
+
+  return grid;
+}
+
+function buildLevel3Hidden() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) {
+    grid.push(new Array(LEVEL_COLS).fill('.'));
+  }
+
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) {
+      grid[row][col] = id;
+    }
+  }
+
+  // Underground shell.
+  for (let c = 0; c < LEVEL_COLS; c++) {
+    setTile(c, 0, 'H');
+    setTile(c, 1, 'H');
+    setTile(c, 13, 'G');
+    setTile(c, 14, 'G');
+  }
+
+  // Entry pipe near start.
+  setTile(8, 11, 'PT'); setTile(9, 11, 'PR');
+  setTile(8, 12, 'PL'); setTile(9, 12, 'PB');
+  setTile(8, 13, 'PL'); setTile(9, 13, 'PB');
+
+  // Return pipe near end.
+  setTile(196, 11, 'PT'); setTile(197, 11, 'PR');
+  setTile(196, 12, 'PL'); setTile(197, 12, 'PB');
+  setTile(196, 13, 'PL'); setTile(197, 13, 'PB');
+
+  // Coin room platforms.
+  const hardPlatforms = [
+    [22, 40, 10],
+    [50, 70, 8],
+    [90, 112, 9],
+    [126, 140, 8],
+    [156, 172, 10],
+  ];
+  for (const [start, end, row] of hardPlatforms) {
+    for (let c = start; c <= end; c++) setTile(c, row, 'H');
+  }
+
+  const qBlocks = [
+    [30,8],[32,8],[34,8],
+    [58,6],[60,6],[62,6],
+    [100,7],[102,7],
+    [132,6],[134,6],
+    [166,8],[168,8],
+  ];
+  for (const [c, r] of qBlocks) setTile(c, r, 'Q');
+
+  return grid;
+}

@@ -90,6 +90,7 @@ function updateMario() {
 
   const left         = isDown(['ArrowLeft',  'KeyA']);
   const right        = isDown(['ArrowRight', 'KeyD']);
+  const downHeld     = isDown(['ArrowDown', 'KeyS']);
   const run          = isDown(['KeyX', 'ShiftLeft', 'ShiftRight']);
   const jumpPressed  = isPressed(['Space', 'KeyZ']);
   const jumpHeld     = isDown(['Space', 'KeyZ']);
@@ -150,6 +151,8 @@ function updateMario() {
 
   // Tile collision
   mario.grounded = resolvePlayerTileCollision(mario, handleHeadBonk);
+  if (pipeTransitionLock > 0) pipeTransitionLock--;
+  tryLevel3PipeTransition(downHeld);
 
   // World left boundary
   if (mario.x < 0) { mario.x = 0; mario.vx = 0; }
@@ -159,7 +162,7 @@ function updateMario() {
 
   // Flagpole check
   const marioColCenter = Math.floor((mario.x + mario.w / 2) / TILE);
-  if (marioColCenter === 210 && !mario.won) {
+  if (currentArea === 'main' && marioColCenter === 210 && !mario.won) {
     mario.won        = true;
     mario.onFlagpole = true;
     mario.vx         = 0;
@@ -214,6 +217,34 @@ function updateMario() {
     }
   }
   if (fireballCooldown > 0) fireballCooldown--;
+}
+
+function tryLevel3PipeTransition(downHeld) {
+  if (currentLevel !== 3 || !downHeld || !mario.grounded || pipeTransitionLock > 0) return;
+
+  const centerX = mario.x + mario.w / 2;
+  const feetY = mario.y + mario.h;
+
+  if (currentArea === 'main') {
+    const entryCol = 120;
+    const pipeTopY = 11 * TILE;
+    const onPipe = centerX >= entryCol * TILE &&
+                   centerX <= (entryCol + 2) * TILE &&
+                   Math.abs(feetY - pipeTopY) <= 2;
+    if (onPipe) {
+      enterLevel3HiddenArea();
+    }
+    return;
+  }
+
+  const returnCol = 196;
+  const returnTopY = 11 * TILE;
+  const onReturnPipe = centerX >= returnCol * TILE &&
+                       centerX <= (returnCol + 2) * TILE &&
+                       Math.abs(feetY - returnTopY) <= 2;
+  if (onReturnPipe) {
+    exitLevel3HiddenArea();
+  }
 }
 
 function triggerMarioDeath() {
