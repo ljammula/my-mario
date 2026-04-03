@@ -43,6 +43,19 @@ function drawTile(ctx, id, col, row) {
       ctx.fillRect(sx + 3*sz/4, sy + sz/2 + 2, 2, sz/2 - 2);
       break;
     }
+    case 'M': {
+      // Athletic platform: warm mushroom-cap look for World 1-3.
+      ctx.fillStyle = '#D2691E';
+      ctx.fillRect(sx, sy + 4, sz, sz - 4);
+      ctx.fillStyle = '#F4A460';
+      ctx.fillRect(sx, sy, sz, 6);
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(sx, sy + 6, sz, 2);
+      ctx.fillRect(sx, sy + sz - 2, sz, 2);
+      ctx.fillRect(sx, sy + 8, 2, sz - 8);
+      ctx.fillRect(sx + sz - 2, sy + 8, 2, sz - 8);
+      break;
+    }
     case 'Q': {
       ctx.fillStyle = '#FF8C00';
       ctx.fillRect(sx, sy, sz, sz);
@@ -482,7 +495,13 @@ function drawControlsHelpOverlay(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  ctx.fillStyle = currentLevel === 2 ? '#000000' : '#5C94FC';
+  if (currentArea === 'hidden' || currentLevel === 2) {
+    ctx.fillStyle = '#000000';
+  } else if (currentLevel === 3) {
+    ctx.fillStyle = '#79B8FF';
+  } else {
+    ctx.fillStyle = '#5C94FC';
+  }
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 

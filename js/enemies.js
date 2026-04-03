@@ -34,6 +34,12 @@ function updateGoomba(g) {
     return;
   }
 
+  if (g.edgeAware) {
+    const checkCol  = g.vx < 0 ? Math.floor((g.x - 1) / TILE) : Math.floor((g.x + g.w) / TILE);
+    const groundRow = Math.floor((g.y + g.h + 1) / TILE);
+    if (!isSolid(checkCol, groundRow) && g.vy >= 0) g.vx = -g.vx;
+  }
+
   g.vy += GRAVITY;
   if (g.vy > MAX_FALL_SPEED) g.vy = MAX_FALL_SPEED;
 
@@ -73,8 +79,9 @@ function updateKoopa(k) {
 
 function updatePiranha() {
   if (!piranha) return;
-  const pipeX    = 97 * TILE;
-  const marioNear = Math.abs(mario.x - pipeX) < TILE;
+  const pipeX = piranha.pipeX ?? (piranha.x + piranha.w / 2);
+  const marioCenterX = mario.x + mario.w / 2;
+  const marioNear = Math.abs(marioCenterX - pipeX) < TILE;
 
   piranha.timer++;
   const cycle = 120; // 2s at 60fps

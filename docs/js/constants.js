@@ -33,6 +33,7 @@ const T = {
   EMPTY:       '.',
   GROUND:      'G',
   BRICK:       'B',
+  PLATFORM:    'M',
   QUESTION:    'Q',
   USED:        'U',
   HARD:        'H',
@@ -46,7 +47,7 @@ const T = {
   CASTLE_DOOR: 'CD',
 };
 
-const SOLID_TILES = new Set(['G','B','Q','U','H','PT','PR','PL','PB','CA','CD']);
+const SOLID_TILES = new Set(['G','B','M','Q','U','H','PT','PR','PL','PB','CA','CD']);
 
 // Game states
 const STATE = {
