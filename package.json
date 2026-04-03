@@ -3,6 +3,9 @@
   "version": "2.0.0",
   "description": "Super Mario Bros World 1-1 — vanilla JS + HTML5 Canvas",
   "private": true,
+  "scripts": {
+    "test": "node test.js"
+  },
   "devDependencies": {
     "playwright": "^1.58.2"
   }
