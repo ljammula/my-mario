@@ -231,7 +231,8 @@ function enterLevel3HiddenArea() {
 }
 
 function exitLevel3HiddenArea() {
-  switchLevel3Area('main', 124 * TILE, 11 * TILE);
+  // Exit on top of the main-area entry pipe so the player never respawns over the pit.
+  switchLevel3Area('main', 121 * TILE + 2, 10 * TILE);
 }
 
 function resetLevel() {
