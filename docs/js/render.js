@@ -448,6 +448,37 @@ function drawHUD(ctx) {
   ctx.fillText('\u2665\u00D7' + lives, 100, 10);
 }
 
+function drawControlsHelpOverlay(ctx) {
+  const panelW = 188;
+  const panelH = 86;
+  const panelX = CANVAS_W - panelW - 12;
+  const panelY = 56;
+  const lines = [
+    'CONTROLS',
+    '\u2190/\u2192  MOVE',
+    'SPACE/Z  JUMP',
+    'ENTER  START/PAUSE',
+  ];
+
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(panelX, panelY, panelW, panelH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(panelX + 0.5, panelY + 0.5, panelW - 1, panelH - 1);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText(lines[0], panelX + 10, panelY + 8);
+
+  ctx.font = '10px monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  for (let i = 1; i < lines.length; i++) {
+    ctx.fillText(lines[i], panelX + 10, panelY + 8 + i * 18);
+  }
+}
+
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
@@ -572,6 +603,7 @@ function render(ctx) {
   drawPiranha(ctx);
   drawMario(ctx);
   drawHUD(ctx);
+  drawControlsHelpOverlay(ctx);
 
   if (gameState === STATE.PAUSED) drawPausedOverlay(ctx);
   if (gameState === STATE.WIN)    drawWinScreen(ctx);
