@@ -78,6 +78,8 @@ assert(sourceLevel.includes('function buildLevel3Main()'), 'Expected buildLevel3
 assert(sourceLevel.includes('function buildLevel3Hidden()'), 'Expected buildLevel3Hidden() in js/level.js');
 assert(sourceState.includes('enterLevel3HiddenArea'), 'Expected hidden-area transition helpers in js/state.js');
 assert(sourceGame.includes('currentLevel = (currentLevel % 3) + 1'), 'Expected 3-level rotation in js/game.js');
+assert(sourceGame.includes('resetLevel(true);'), 'Expected respawn/advance to preserve power state');
+assert(sourceGame.includes('resetLevel(false);'), 'Expected fresh start paths to reset power state');
 assert(sourceEnemies.includes('piranha.pipeX'), 'Expected dynamic piranha pipe targeting in js/enemies.js');
 
 for (const label of ['CONTROLS', '\\u2190/\\u2192  MOVE', 'SPACE/Z  JUMP', 'ENTER  START/PAUSE']) {
@@ -191,6 +193,67 @@ assert.strictEqual(transitionChecks.returnPiranha, 75 * 16 + 8, 'Expected piranh
 assert.strictEqual(transitionChecks.lockAfterEnter, 45, 'Expected pipeTransitionLock=45 after entering hidden area');
 assert.strictEqual(transitionChecks.lockAfterExit, 45, 'Expected pipeTransitionLock=45 after exiting hidden area');
 assert(transitionChecks.returnCol >= 120 && transitionChecks.returnCol <= 122, 'Expected return spawn to be on top of main-area entry pipe (cols 120-121)');
+
+const powerRetentionChecks = run(
+  ctx,
+  `(() => {
+    currentLevel = 3;
+    currentArea = 'main';
+    mario = createMario();
+    mario.form = 'fire';
+    mario.h = 24;
+    mario.y = 184;
+    mario.starFrames = 180;
+
+    enterLevel3HiddenArea();
+    const hiddenForm = mario.form;
+    const hiddenStarFrames = mario.starFrames;
+    const hiddenY = mario.y;
+
+    exitLevel3HiddenArea();
+    const returnedForm = mario.form;
+    const returnedStarFrames = mario.starFrames;
+    const returnedY = mario.y;
+
+    resetLevel(true);
+    const respawnForm = mario.form;
+    const respawnStarFrames = mario.starFrames;
+    const respawnH = mario.h;
+    const respawnY = mario.y;
+
+    resetLevel(false);
+    return {
+      hiddenForm,
+      hiddenStarFrames,
+      hiddenY,
+      returnedForm,
+      returnedStarFrames,
+      returnedY,
+      respawnForm,
+      respawnStarFrames,
+      respawnH,
+      respawnY,
+      freshStartForm: mario.form,
+      freshStartStarFrames: mario.starFrames,
+      freshStartH: mario.h,
+      freshStartY: mario.y,
+    };
+  })()`
+);
+assert.strictEqual(powerRetentionChecks.hiddenForm, 'fire', 'Expected form preserved when entering hidden pipe area');
+assert.strictEqual(powerRetentionChecks.hiddenStarFrames, 180, 'Expected star timer preserved when entering hidden pipe area');
+assert.strictEqual(powerRetentionChecks.hiddenY, 10 * 16 - 8, 'Expected tall form pipe entry spawn to align feet to pipe top');
+assert.strictEqual(powerRetentionChecks.returnedForm, 'fire', 'Expected form preserved when exiting hidden pipe area');
+assert.strictEqual(powerRetentionChecks.returnedStarFrames, 180, 'Expected star timer preserved when exiting hidden pipe area');
+assert.strictEqual(powerRetentionChecks.returnedY, 10 * 16 - 8, 'Expected tall form pipe exit spawn to align feet to pipe top');
+assert.strictEqual(powerRetentionChecks.respawnForm, 'fire', 'Expected resetLevel(true) to preserve fire form');
+assert.strictEqual(powerRetentionChecks.respawnStarFrames, 180, 'Expected resetLevel(true) to preserve star timer');
+assert.strictEqual(powerRetentionChecks.respawnH, 24, 'Expected resetLevel(true) to preserve tall hitbox');
+assert.strictEqual(powerRetentionChecks.respawnY, 184, 'Expected resetLevel(true) to preserve tall-form spawn feet alignment');
+assert.strictEqual(powerRetentionChecks.freshStartForm, 'small', 'Expected resetLevel(false) to reset to small Mario');
+assert.strictEqual(powerRetentionChecks.freshStartStarFrames, 0, 'Expected resetLevel(false) to clear star timer');
+assert.strictEqual(powerRetentionChecks.freshStartH, 16, 'Expected resetLevel(false) to restore small hitbox');
+assert.strictEqual(powerRetentionChecks.freshStartY, 192, 'Expected resetLevel(false) to use small spawn position');
 
 const piranhaChecks = run(
   ctx,

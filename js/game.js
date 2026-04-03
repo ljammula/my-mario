@@ -11,7 +11,7 @@ function update() {
         AudioSystem.init();   // unlock AudioContext during user gesture
         gameState  = STATE.INTRO;
         stateTimer = 3 * 60;
-        resetLevel();
+        resetLevel(false);
       }
       break;
 
@@ -68,7 +68,7 @@ function update() {
         } else {
           gameState    = STATE.INTRO;
           stateTimer   = 3 * 60;
-          resetLevel();
+          resetLevel(true);
           musicStarted = false;
         }
       }
@@ -80,7 +80,7 @@ function update() {
         currentLevel = (currentLevel % 3) + 1;
         gameState    = STATE.INTRO;
         stateTimer   = 3 * 60;
-        resetLevel();
+        resetLevel(true);
         musicStarted = false;
       }
       break;
@@ -121,5 +121,5 @@ function loop(timestamp) {
 }
 
 // Initialize and start
-resetLevel();
+resetLevel(false);
 requestAnimationFrame(loop);

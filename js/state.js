@@ -26,19 +26,22 @@ let piranha        = null;
 
 // --------------- Entity factories ---------------
 
-function createMario() {
+function createMario(powerState = null) {
+  const form = powerState?.form || 'small';
+  const isTall = form !== 'small';
+  const starFrames = Math.max(0, powerState?.starFrames || 0);
   return {
-    x: 48, y: 192,
+    x: 48, y: isTall ? 184 : 192,
     vx: 0, vy: 0,
-    w: 12, h: 16,
+    w: 12, h: isTall ? 24 : 16,
     grounded: false,
     facing: 1,           // 1=right, -1=left
-    form: 'small',       // 'small' | 'super' | 'fire'
+    form,                // 'small' | 'super' | 'fire'
     jumpHeld: false,
     coyoteFrames: 0,
     jumpBuffer: 0,
     invincibleFrames: 0,
-    starFrames: 0,
+    starFrames,
     flickerVisible: true,
     animFrame: 0,
     animTimer: 0,
@@ -212,7 +215,7 @@ function switchLevel3Area(nextArea, spawnX, spawnY) {
   if (cameraX > maxCamera) cameraX = maxCamera;
 
   mario.x = spawnX;
-  mario.y = spawnY;
+  mario.y = spawnY + (16 - mario.h);
   mario.vx = 0;
   mario.vy = 0;
   mario.grounded = false;
@@ -235,9 +238,18 @@ function exitLevel3HiddenArea() {
   switchLevel3Area('main', 121 * TILE + 2, 10 * TILE);
 }
 
-function resetLevel() {
+function getMarioPowerState() {
+  if (!mario) return null;
+  return {
+    form: mario.form,
+    starFrames: mario.starFrames,
+  };
+}
+
+function resetLevel(preservePower = false) {
+  const powerState = preservePower ? getMarioPowerState() : null;
   currentArea      = 'main';
-  mario            = createMario();
+  mario            = createMario(powerState);
   applyCurrentAreaData();
   cameraX          = 0;
   gameTimer        = 400 * 60;
