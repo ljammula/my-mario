@@ -22,9 +22,15 @@ for (const label of ['CONTROLS', '\\u2190/\\u2192  MOVE', 'SPACE/Z  JUMP', 'ENTE
   );
 }
 
+const hudCallPos = sourceRender.indexOf('drawHUD(ctx);');
+const overlayCallPos = sourceRender.indexOf('drawControlsHelpOverlay(ctx);');
 assert(
-  /drawHUD\(ctx\);\s*\n\s*drawControlsHelpOverlay\(ctx\);/.test(sourceRender),
+  hudCallPos !== -1 && overlayCallPos !== -1 && hudCallPos < overlayCallPos,
   'Expected controls help overlay to render after HUD in render()'
+);
+assert(
+  /STATE\.(PLAYING|PAUSED).*drawControlsHelpOverlay/.test(sourceRender),
+  'Expected controls help overlay to be guarded by STATE.PLAYING or STATE.PAUSED'
 );
 
 assert.strictEqual(

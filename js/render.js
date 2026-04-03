@@ -603,7 +603,7 @@ function render(ctx) {
   drawPiranha(ctx);
   drawMario(ctx);
   drawHUD(ctx);
-  drawControlsHelpOverlay(ctx);
+  if (gameState === STATE.PLAYING || gameState === STATE.PAUSED) drawControlsHelpOverlay(ctx);
 
   if (gameState === STATE.PAUSED) drawPausedOverlay(ctx);
   if (gameState === STATE.WIN)    drawWinScreen(ctx);
