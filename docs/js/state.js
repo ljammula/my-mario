@@ -210,9 +210,6 @@ function switchLevel3Area(nextArea, spawnX, spawnY) {
   if (currentLevel !== 3) return;
   currentArea = nextArea;
   applyCurrentAreaData();
-  cameraX = Math.max(0, spawnX - LOGICAL_W * 0.4);
-  const maxCamera = LEVEL_COLS * TILE - LOGICAL_W;
-  if (cameraX > maxCamera) cameraX = maxCamera;
 
   mario.x = spawnX;
   mario.y = spawnY + (16 - mario.h);
@@ -225,6 +222,7 @@ function switchLevel3Area(nextArea, spawnX, spawnY) {
   items = [];
   fireballs = [];
   pipeTransitionLock = 45;
+  if (typeof snapCameraToMario === 'function') snapCameraToMario(false);
 
   AudioSystem.playMusic(getMusicTrack());
 }
@@ -252,6 +250,7 @@ function resetLevel(preservePower = false) {
   mario            = createMario(powerState);
   applyCurrentAreaData();
   cameraX          = 0;
+  if (typeof snapCameraToMario === 'function') snapCameraToMario(false);
   gameTimer        = 400 * 60;
   fireballCooldown = 0;
   pipeTransitionLock = 0;

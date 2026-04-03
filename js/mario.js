@@ -106,22 +106,26 @@ function updateMario() {
   // Horizontal movement
   const accel  = run ? RUN_ACCELERATION : WALK_ACCELERATION;
   const maxSpd = run ? RUN_MAX_SPEED    : WALK_MAX_SPEED;
+  const reverseControl = mario.grounded ? SKID_DECELERATION : SKID_DECELERATION * 0.55;
+  const minStartSpeed = run ? 0.42 : 0.34;
 
   if (left && !right) {
     mario.facing = -1;
-    if (mario.vx > 0.5 && mario.grounded) {
-      mario.vx -= SKID_DECELERATION;
+    if (mario.vx > 0.12) {
+      mario.vx -= reverseControl;
     } else {
       mario.vx -= accel;
     }
+    if (mario.vx > -minStartSpeed) mario.vx = Math.min(mario.vx, -minStartSpeed);
     if (mario.vx < -maxSpd) mario.vx = -maxSpd;
   } else if (right && !left) {
     mario.facing = 1;
-    if (mario.vx < -0.5 && mario.grounded) {
-      mario.vx += SKID_DECELERATION;
+    if (mario.vx < -0.12) {
+      mario.vx += reverseControl;
     } else {
       mario.vx += accel;
     }
+    if (mario.vx < minStartSpeed) mario.vx = Math.max(mario.vx, minStartSpeed);
     if (mario.vx > maxSpd) mario.vx = maxSpd;
   } else {
     if (mario.grounded) {

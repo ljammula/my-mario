@@ -17,16 +17,27 @@ const GRAVITY           = 0.5;
 const MAX_FALL_SPEED    = 8.0;
 const JUMP_VELOCITY     = -8.5;
 const JUMP_HOLD_GRAVITY = 0.25;
-const WALK_ACCELERATION = 0.15;
-const RUN_ACCELERATION  = 0.25;
-const WALK_MAX_SPEED    = 2.5;
-const RUN_MAX_SPEED     = 5.0;
-const SKID_DECELERATION = 0.35;
-const GROUND_FRICTION   = 0.12;
-const AIR_RESISTANCE    = 0.04;
+const WALK_ACCELERATION = 0.22;
+const RUN_ACCELERATION  = 0.34;
+const WALK_MAX_SPEED    = 2.9;
+const RUN_MAX_SPEED     = 5.4;
+const SKID_DECELERATION = 0.50;
+const GROUND_FRICTION   = 0.18;
+const AIR_RESISTANCE    = 0.05;
 const COYOTE_FRAMES     = 4;
 const JUMP_BUFFER       = 6;
 const DEATH_POP_VY      = -8.0;
+
+// Input repeat tuning (frames @ 60 fps)
+const INPUT_REPEAT_DELAY    = 8;
+const INPUT_REPEAT_INTERVAL = 2;
+
+// Camera tuning
+const CAMERA_LOOKAHEAD    = 28;
+const CAMERA_SMOOTHING    = 0.22;
+const CAMERA_MAX_STEP     = 10;
+const CAMERA_VX_GAIN      = 1.2;
+const CAMERA_SNAP_EPSILON = 0.1;
 
 // Tile IDs
 const T = {

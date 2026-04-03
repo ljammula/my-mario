@@ -4,6 +4,7 @@
 
 function update() {
   blinkTimer++;
+  updateInputRepeat();
 
   switch(gameState) {
     case STATE.TITLE:
@@ -40,8 +41,8 @@ function update() {
       gameTimer--;
       if (gameTimer <= 0) { triggerMarioDeath(); break; }
 
-      updateCamera();
       updateMario();
+      updateCamera();
       updateEnemies();
       updateItems();
       updateFireballs();
