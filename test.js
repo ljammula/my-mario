@@ -284,4 +284,283 @@ assert.strictEqual(piranhaChecks.nearState, 'hidden', 'Expected piranha to stay 
 assert.strictEqual(piranhaChecks.farState, 'rising', 'Expected piranha to rise when Mario is far');
 assert.strictEqual(piranhaChecks.damageCalls, 1, 'Expected piranha contact to damage Mario');
 
+// ============================================================
+// POWER-UP MECHANICS — separate context that loads items.js + mario.js
+// ============================================================
+
+const ctxPow = createContext();
+loadScripts(ctxPow, ['js/constants.js', 'js/level.js', 'js/state.js', 'js/tiles.js', 'js/collision.js']);
+// Stubs required by mario.js (not needed for the functions under test, but must exist)
+run(ctxPow, `
+  function isDown()  { return false; }
+  function isPressed() { return false; }
+  function updateCamera() {}
+  function updateEnemies() {}
+  function updateFireballs() {}
+  function updatePiranha() {}
+`);
+loadScripts(ctxPow, ['js/items.js', 'js/mario.js']);
+
+// ---- collectItem: mushroom upgrade chain ----
+const collectMushroomChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+
+  // small + mushroom → super
+  mario.form = 'small'; mario.h = 16; mario.y = 192;
+  const prevY = mario.y;
+  collectItem({ type: 'mushroom' });
+  const afterSmallForm = mario.form;
+  const afterSmallH    = mario.h;
+  const afterSmallYDelta = prevY - mario.y;  // should be +8 (y decremented)
+
+  // super + mushroom → stays super, no position change
+  mario.form = 'super'; mario.h = 24; mario.y = 184;
+  collectItem({ type: 'mushroom' });
+  const afterSuperForm = mario.form;
+  const afterSuperH    = mario.h;
+
+  // fire + mushroom → stays fire
+  mario.form = 'fire'; mario.h = 24;
+  collectItem({ type: 'mushroom' });
+  const afterFireForm = mario.form;
+
+  return { afterSmallForm, afterSmallH, afterSmallYDelta, afterSuperForm, afterSuperH, afterFireForm };
+})()`);
+assert.strictEqual(collectMushroomChecks.afterSmallForm,  'super', 'collectItem(mushroom): small → super');
+assert.strictEqual(collectMushroomChecks.afterSmallH,     24,      'collectItem(mushroom): small h becomes 24');
+assert.strictEqual(collectMushroomChecks.afterSmallYDelta, 8,      'collectItem(mushroom): y decrements 8 to keep feet in place');
+assert.strictEqual(collectMushroomChecks.afterSuperForm,  'super', 'collectItem(mushroom): super stays super');
+assert.strictEqual(collectMushroomChecks.afterSuperH,     24,      'collectItem(mushroom): super h stays 24');
+assert.strictEqual(collectMushroomChecks.afterFireForm,   'fire',  'collectItem(mushroom): fire stays fire');
+
+// ---- collectItem: fireflower upgrade chain ----
+const collectFlowerChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+
+  // small + fireflower → fire, y adjusts
+  mario.form = 'small'; mario.h = 16; mario.y = 192;
+  const prevY = mario.y;
+  collectItem({ type: 'fireflower' });
+  const fromSmallForm   = mario.form;
+  const fromSmallH      = mario.h;
+  const fromSmallYDelta = prevY - mario.y;
+
+  // super + fireflower → fire, y unchanged
+  mario.form = 'super'; mario.h = 24; mario.y = 184;
+  const superPrevY = mario.y;
+  collectItem({ type: 'fireflower' });
+  const fromSuperForm   = mario.form;
+  const fromSuperH      = mario.h;
+  const fromSuperYDelta = superPrevY - mario.y;
+
+  // fire + fireflower → still fire
+  mario.form = 'fire'; mario.h = 24;
+  collectItem({ type: 'fireflower' });
+  const fromFireForm = mario.form;
+
+  return { fromSmallForm, fromSmallH, fromSmallYDelta, fromSuperForm, fromSuperH, fromSuperYDelta, fromFireForm };
+})()`);
+assert.strictEqual(collectFlowerChecks.fromSmallForm,    'fire', 'collectItem(fireflower): small → fire');
+assert.strictEqual(collectFlowerChecks.fromSmallH,       24,     'collectItem(fireflower): small h becomes 24');
+assert.strictEqual(collectFlowerChecks.fromSmallYDelta,  8,      'collectItem(fireflower): small y decrements 8 (feet stay put)');
+assert.strictEqual(collectFlowerChecks.fromSuperForm,    'fire', 'collectItem(fireflower): super → fire');
+assert.strictEqual(collectFlowerChecks.fromSuperH,       24,     'collectItem(fireflower): super h stays 24');
+assert.strictEqual(collectFlowerChecks.fromSuperYDelta,  0,      'collectItem(fireflower): super y unchanged (already tall)');
+assert.strictEqual(collectFlowerChecks.fromFireForm,     'fire', 'collectItem(fireflower): fire stays fire');
+
+// ---- collectItem: star ----
+const collectStarChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+  mario.form = 'super'; mario.starFrames = 0;
+  collectItem({ type: 'star' });
+  const superGotStar = mario.starFrames;
+  const superFormUnchanged = mario.form;
+
+  mario.form = 'fire'; mario.starFrames = 0;
+  collectItem({ type: 'star' });
+  const fireGotStar = mario.starFrames;
+  const fireFormUnchanged = mario.form;
+
+  return { superGotStar, superFormUnchanged, fireGotStar, fireFormUnchanged };
+})()`);
+assert.strictEqual(collectStarChecks.superGotStar,      600,    'collectItem(star): sets starFrames = 600');
+assert.strictEqual(collectStarChecks.superFormUnchanged,'super', 'collectItem(star): form unchanged for super');
+assert.strictEqual(collectStarChecks.fireGotStar,       600,    'collectItem(star): sets starFrames = 600 for fire');
+assert.strictEqual(collectStarChecks.fireFormUnchanged, 'fire',  'collectItem(star): form unchanged for fire');
+
+// ---- damageMario: downgrade chain ----
+const damageChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+
+  // fire → super on damage
+  mario.form = 'fire'; mario.h = 24; mario.invincibleFrames = 0; mario.starFrames = 0;
+  damageMario();
+  const afterFireForm  = mario.form;
+  const afterFireH     = mario.h;
+  const afterFireInv   = mario.invincibleFrames;
+
+  // super → small on damage; feet should not move (y += 8)
+  mario.form = 'super'; mario.h = 24; mario.y = 100; mario.invincibleFrames = 0; mario.starFrames = 0;
+  const superY = mario.y;
+  damageMario();
+  const afterSuperForm = mario.form;
+  const afterSuperH    = mario.h;
+  const afterSuperInv  = mario.invincibleFrames;
+  const afterSuperFeet = mario.y + mario.h;   // feet pixel = y + h
+  const expectedFeet   = superY + 24;         // should equal feet before damage
+
+  // small → death
+  mario.form = 'small'; mario.h = 16; mario.dead = false; mario.invincibleFrames = 0; mario.starFrames = 0;
+  damageMario();
+  const afterSmallDead = mario.dead;
+
+  return {
+    afterFireForm, afterFireH, afterFireInv,
+    afterSuperForm, afterSuperH, afterSuperInv, afterSuperFeet, expectedFeet,
+    afterSmallDead,
+  };
+})()`);
+assert.strictEqual(damageChecks.afterFireForm,   'super', 'damageMario: fire → super');
+assert.strictEqual(damageChecks.afterFireH,      24,      'damageMario: h stays 24 (fire→super, both tall)');
+assert.strictEqual(damageChecks.afterFireInv,    120,     'damageMario: fire→super grants 120 invincible frames');
+assert.strictEqual(damageChecks.afterSuperForm,  'small', 'damageMario: super → small');
+assert.strictEqual(damageChecks.afterSuperH,     16,      'damageMario: h becomes 16 after super→small');
+assert.strictEqual(damageChecks.afterSuperInv,   120,     'damageMario: super→small grants 120 invincible frames');
+assert.strictEqual(damageChecks.afterSuperFeet,  damageChecks.expectedFeet, 'damageMario: super→small feet pixel stays constant (y += 8)');
+assert(damageChecks.afterSmallDead, 'damageMario: small Mario dies');
+
+// ---- damageMario: invincibility blocks damage ----
+const damageBlockChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+
+  // invincibleFrames > 0 → no downgrade
+  mario.form = 'super'; mario.invincibleFrames = 60; mario.starFrames = 0;
+  damageMario();
+  const blockedByInv = mario.form;
+
+  // starFrames > 0 → no downgrade
+  mario.form = 'fire'; mario.invincibleFrames = 0; mario.starFrames = 60;
+  damageMario();
+  const blockedByStar = mario.form;
+
+  return { blockedByInv, blockedByStar };
+})()`);
+assert.strictEqual(damageBlockChecks.blockedByInv,  'super', 'damageMario: invincibleFrames blocks damage');
+assert.strictEqual(damageBlockChecks.blockedByStar, 'fire',  'damageMario: starFrames blocks damage');
+
+// ---- Pipe transitions: super and small form retention ----
+const pipeFormChecks = run(ctxPow, `(() => {
+  currentLevel = 3;
+
+  // super Mario enters hidden area
+  currentArea = 'main';
+  mario = createMario();
+  mario.form = 'super'; mario.h = 24;
+  applyCurrentAreaData();
+  enterLevel3HiddenArea();
+  const hiddenSuperForm = mario.form;
+  const hiddenSuperH    = mario.h;
+  const hiddenSuperFeet = mario.y + mario.h;
+
+  // super Mario exits hidden area
+  exitLevel3HiddenArea();
+  const exitedSuperForm = mario.form;
+  const exitedSuperH    = mario.h;
+  const exitedSuperFeet = mario.y + mario.h;
+
+  // small Mario enters hidden area
+  currentArea = 'main';
+  mario = createMario();
+  mario.form = 'small'; mario.h = 16;
+  applyCurrentAreaData();
+  enterLevel3HiddenArea();
+  const hiddenSmallForm = mario.form;
+  const hiddenSmallH    = mario.h;
+
+  return {
+    hiddenSuperForm, hiddenSuperH, hiddenSuperFeet,
+    exitedSuperForm, exitedSuperH, exitedSuperFeet,
+    hiddenSmallForm, hiddenSmallH,
+  };
+})()`);
+assert.strictEqual(pipeFormChecks.hiddenSuperForm, 'super', 'pipe enter: super form preserved in hidden area');
+assert.strictEqual(pipeFormChecks.hiddenSuperH,    24,      'pipe enter: super h=24 preserved in hidden area');
+assert.strictEqual(pipeFormChecks.hiddenSuperFeet, 11 * 16, 'pipe enter: super Mario feet land on pipe top row 11');
+assert.strictEqual(pipeFormChecks.exitedSuperForm, 'super', 'pipe exit: super form preserved back in main area');
+assert.strictEqual(pipeFormChecks.exitedSuperH,    24,      'pipe exit: super h=24 preserved back in main area');
+assert.strictEqual(pipeFormChecks.exitedSuperFeet, 11 * 16, 'pipe exit: super Mario feet land on pipe top row 11');
+assert.strictEqual(pipeFormChecks.hiddenSmallForm, 'small', 'pipe enter: small form preserved in hidden area');
+assert.strictEqual(pipeFormChecks.hiddenSmallH,    16,      'pipe enter: small h=16 preserved in hidden area');
+
+// ---- resetLevel(true): small and super form retention ----
+const resetFormChecks = run(ctxPow, `(() => {
+  currentLevel = 1; resetLevel();
+
+  // small preserved
+  mario.form = 'small'; mario.h = 16;
+  resetLevel(true);
+  const smallForm = mario.form; const smallH = mario.h; const smallY = mario.y;
+
+  // super preserved
+  mario.form = 'super'; mario.h = 24;
+  resetLevel(true);
+  const superForm = mario.form; const superH = mario.h; const superY = mario.y;
+
+  // fire preserved (covered by existing suite; include for completeness)
+  mario.form = 'fire'; mario.h = 24;
+  resetLevel(true);
+  const fireForm = mario.form; const fireH = mario.h; const fireY = mario.y;
+
+  return { smallForm, smallH, smallY, superForm, superH, superY, fireForm, fireH, fireY };
+})()`);
+assert.strictEqual(resetFormChecks.smallForm, 'small', 'resetLevel(true): small form preserved');
+assert.strictEqual(resetFormChecks.smallH,    16,      'resetLevel(true): small h=16');
+assert.strictEqual(resetFormChecks.smallY,    192,     'resetLevel(true): small spawn y=192');
+assert.strictEqual(resetFormChecks.superForm, 'super', 'resetLevel(true): super form preserved');
+assert.strictEqual(resetFormChecks.superH,    24,      'resetLevel(true): super h=24');
+assert.strictEqual(resetFormChecks.superY,    184,     'resetLevel(true): super spawn y=184 (feet aligned)');
+assert.strictEqual(resetFormChecks.fireForm,  'fire',  'resetLevel(true): fire form preserved');
+assert.strictEqual(resetFormChecks.fireH,     24,      'resetLevel(true): fire h=24');
+assert.strictEqual(resetFormChecks.fireY,     184,     'resetLevel(true): fire spawn y=184 (feet aligned)');
+
+// ---- Level advancement (win) preserves power across all three level transitions ----
+const levelAdvanceChecks = run(ctxPow, `(() => {
+  // Level 1 → 2 with super form
+  currentLevel = 1; resetLevel();
+  mario.form = 'super'; mario.h = 24;
+  currentLevel = (currentLevel % 3) + 1;  // → 2
+  resetLevel(true);
+  const l1to2Form = mario.form; const l1to2H = mario.h;
+
+  // Level 2 → 3 with fire form
+  currentLevel = 2; resetLevel();
+  mario.form = 'fire'; mario.h = 24;
+  currentLevel = (currentLevel % 3) + 1;  // → 3
+  resetLevel(true);
+  const l2to3Form = mario.form; const l2to3H = mario.h;
+
+  // Level 3 → 1 with super form
+  currentLevel = 3; resetLevel();
+  mario.form = 'super'; mario.h = 24;
+  currentLevel = (currentLevel % 3) + 1;  // → 1
+  resetLevel(true);
+  const l3to1Form = mario.form; const l3to1H = mario.h;
+
+  // Level 2 → 3 with star frames
+  currentLevel = 2; resetLevel();
+  mario.form = 'fire'; mario.starFrames = 250;
+  currentLevel = (currentLevel % 3) + 1;  // → 3
+  resetLevel(true);
+  const l2to3Star = mario.starFrames;
+
+  return { l1to2Form, l1to2H, l2to3Form, l2to3H, l3to1Form, l3to1H, l2to3Star };
+})()`);
+assert.strictEqual(levelAdvanceChecks.l1to2Form, 'super', 'level 1→2 win: super form preserved');
+assert.strictEqual(levelAdvanceChecks.l1to2H,    24,      'level 1→2 win: super h=24 preserved');
+assert.strictEqual(levelAdvanceChecks.l2to3Form, 'fire',  'level 2→3 win: fire form preserved');
+assert.strictEqual(levelAdvanceChecks.l2to3H,    24,      'level 2→3 win: fire h=24 preserved');
+assert.strictEqual(levelAdvanceChecks.l3to1Form, 'super', 'level 3→1 win: super form preserved');
+assert.strictEqual(levelAdvanceChecks.l3to1H,    24,      'level 3→1 win: super h=24 preserved');
+assert.strictEqual(levelAdvanceChecks.l2to3Star, 250,     'level 2→3 win: star frames preserved');
+
 console.log('All checks passed.');
