@@ -5,29 +5,64 @@
 const keys    = {};
 const keysDown = {};
 const keysUp   = {};
+const repeatCounters = {};
 
-window.addEventListener('keydown', e => {
-  if (!keys[e.code]) {
-    keysDown[e.code] = true;
+function setKeyDown(code) {
+  if (!keys[code]) {
+    keysDown[code] = true;
+    repeatCounters[code] = INPUT_REPEAT_DELAY;
     AudioSystem.init();
   }
-  keys[e.code] = true;
+  keys[code] = true;
+}
+
+function setKeyUp(code) {
+  if (keys[code]) keysUp[code] = true;
+  keys[code] = false;
+  delete repeatCounters[code];
+}
+
+window.addEventListener('keydown', e => {
+  setKeyDown(e.code);
   if (['Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code)) {
     e.preventDefault();
   }
 });
 
 window.addEventListener('keyup', e => {
-  keys[e.code]  = false;
-  keysUp[e.code] = true;
+  setKeyUp(e.code);
 });
 
 function isDown(codes)    { return codes.some(c => keys[c]); }
 function isPressed(codes) { return codes.some(c => keysDown[c]); }
 
+function updateInputRepeat() {
+  for (const code in repeatCounters) {
+    if (!keys[code]) {
+      delete repeatCounters[code];
+      continue;
+    }
+    repeatCounters[code]--;
+    if (repeatCounters[code] <= 0) {
+      keysDown[code] = true;
+      repeatCounters[code] = INPUT_REPEAT_INTERVAL;
+    }
+  }
+}
+
 function clearInputEdges() {
   for (const k in keysDown) delete keysDown[k];
   for (const k in keysUp)   delete keysUp[k];
+}
+
+function releaseAllInputs() {
+  for (const code in keys) {
+    if (keys[code]) setKeyUp(code);
+  }
+  activeTouches.clear();
+  for (const btnId of Object.keys(TOUCH_BTN_MAP)) {
+    document.getElementById(btnId)?.classList.remove('pressed');
+  }
 }
 
 // ---- Canvas resize (mobile viewport) ----
@@ -62,16 +97,11 @@ const TOUCH_BTN_MAP = {
 const activeTouches = new Map();
 
 function touchPressKey(code) {
-  if (!keys[code]) {
-    keysDown[code] = true;
-    AudioSystem.init();
-  }
-  keys[code] = true;
+  setKeyDown(code);
 }
 
 function touchReleaseKey(code) {
-  keys[code]  = false;
-  keysUp[code] = true;
+  setKeyUp(code);
 }
 
 function activateBtn(btnId) {
@@ -152,3 +182,8 @@ function onTouchMove(e) {
     cv.addEventListener('touchmove',  e => e.preventDefault(), opts);
   }
 })();
+
+window.addEventListener('blur', releaseAllInputs);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') releaseAllInputs();
+});
