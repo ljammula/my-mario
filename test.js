@@ -158,7 +158,9 @@ const transitionChecks = run(
     const hiddenArea = currentArea;
     const hiddenPiranha = piranha;
     const hiddenMusic = getMusicTrack();
+    const lockAfterEnter = pipeTransitionLock;
     exitLevel3HiddenArea();
+    const lockAfterExit = pipeTransitionLock;
     const returnCol = Math.floor((mario.x + mario.w / 2) / TILE);
     const returnFeetRow = Math.floor((mario.y + mario.h) / TILE);
     return {
@@ -168,7 +170,10 @@ const transitionChecks = run(
       startPiranha,
       hiddenPiranha: hiddenPiranha === null,
       hiddenMusic,
+      lockAfterEnter,
+      lockAfterExit,
       returnArea: currentArea,
+      returnCol,
       returnSpawnOnSolid: isSolid(returnCol, returnFeetRow),
       returnPiranha: piranha ? piranha.pipeX : null
     };
@@ -183,6 +188,9 @@ assert.strictEqual(transitionChecks.hiddenMusic, 'underground', 'Expected hidden
 assert.strictEqual(transitionChecks.returnArea, 'main', 'Expected return pipe to switch back to main area');
 assert(transitionChecks.returnSpawnOnSolid, 'Expected hidden-area return to place Mario on solid pipe top');
 assert.strictEqual(transitionChecks.returnPiranha, 75 * 16 + 8, 'Expected piranha restored when returning to main area');
+assert.strictEqual(transitionChecks.lockAfterEnter, 45, 'Expected pipeTransitionLock=45 after entering hidden area');
+assert.strictEqual(transitionChecks.lockAfterExit, 45, 'Expected pipeTransitionLock=45 after exiting hidden area');
+assert(transitionChecks.returnCol >= 120 && transitionChecks.returnCol <= 122, 'Expected return spawn to be on top of main-area entry pipe (cols 120-121)');
 
 const piranhaChecks = run(
   ctx,
