@@ -6,7 +6,45 @@
 function smoothstep(t) { return t * t * (3 - 2 * t); }
 
 let fadeProgress  = 0; // raw linear progress 0→1
-let levelNavCooldown = 0; // frames between level-select arrow navigations
+let levelNavHoldDir = 0;    // -1 left, 1 right, 0 idle
+let levelNavHoldFrames = 0; // consecutive frames held in same nav direction
+const LEVEL_NAV_REPEAT_DELAY = 10;
+const LEVEL_NAV_REPEAT_INTERVAL = 4;
+
+function stepSelectedLevel(dir) {
+  if (dir < 0) {
+    selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : MAX_LEVEL;
+  } else if (dir > 0) {
+    selectedLevel = selectedLevel < MAX_LEVEL ? selectedLevel + 1 : 1;
+  }
+}
+
+function updateLevelSelectNavigation() {
+  const leftDown = isDown(['ArrowLeft']);
+  const rightDown = isDown(['ArrowRight']);
+  const dir = leftDown === rightDown ? 0 : (leftDown ? -1 : 1);
+
+  if (dir === 0) {
+    levelNavHoldDir = 0;
+    levelNavHoldFrames = 0;
+    return;
+  }
+
+  if (dir !== levelNavHoldDir) {
+    levelNavHoldDir = dir;
+    levelNavHoldFrames = 0;
+    stepSelectedLevel(dir); // immediate response when direction changes
+    return;
+  }
+
+  levelNavHoldFrames++;
+  if (levelNavHoldFrames >= LEVEL_NAV_REPEAT_DELAY) {
+    const repeatFrame = levelNavHoldFrames - LEVEL_NAV_REPEAT_DELAY;
+    if (repeatFrame % LEVEL_NAV_REPEAT_INTERVAL === 0) {
+      stepSelectedLevel(dir);
+    }
+  }
+}
 
 // Kick off a fade-out → callback → fade-in → doneState sequence
 function startFade(callback, doneState) {
@@ -28,23 +66,16 @@ function update() {
     case STATE.TITLE:
       if (isPressed(['Enter'])) {
         AudioSystem.init();
-        startFade(() => { selectedLevel = 1; }, STATE.LEVEL_SELECT);
+        startFade(() => {
+          selectedLevel = 1;
+          levelNavHoldDir = 0;
+          levelNavHoldFrames = 0;
+        }, STATE.LEVEL_SELECT);
       }
       break;
 
     case STATE.LEVEL_SELECT:
-      if (levelNavCooldown > 0) levelNavCooldown--;
-      if (isPressed(['ArrowLeft', 'ArrowRight'])) AudioSystem.init();
-      if (levelNavCooldown === 0) {
-        if (isPressed(['ArrowLeft'])) {
-          selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : MAX_LEVEL;
-          levelNavCooldown = 14;
-        }
-        if (isPressed(['ArrowRight'])) {
-          selectedLevel = selectedLevel < MAX_LEVEL ? selectedLevel + 1 : 1;
-          levelNavCooldown = 14;
-        }
-      }
+      updateLevelSelectNavigation();
       if (isPressed(['Enter'])) {
         AudioSystem.init();
         currentLevel = selectedLevel;

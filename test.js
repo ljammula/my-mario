@@ -532,6 +532,87 @@ assert.strictEqual(
   'ArrowRight should auto-repeat after INPUT_REPEAT_DELAY frames for menu navigation'
 );
 
+// Level-select navigation should reverse immediately and repeat on a stable cadence
+const ctxNav = createContext();
+loadScripts(ctxNav, [
+  'js/constants.js',
+  'js/level.js',
+  'js/state.js',
+  'js/input.js',
+  'js/game.js',
+]);
+
+const navReverse = run(ctxNav, `(() => {
+  gameState = STATE.LEVEL_SELECT;
+  selectedLevel = 5;
+  levelNavHoldDir = 0;
+  levelNavHoldFrames = 0;
+
+  setKeyDown('ArrowRight');
+  update();
+  const firstRight = selectedLevel;
+
+  for (let i = 0; i < LEVEL_NAV_REPEAT_DELAY - 2; i++) update();
+  const beforeReverse = selectedLevel;
+
+  setKeyUp('ArrowRight');
+  setKeyDown('ArrowLeft');
+  update();
+  const afterReverse = selectedLevel;
+
+  setKeyUp('ArrowLeft');
+  update();
+  return { firstRight, beforeReverse, afterReverse };
+})()`);
+assert.strictEqual(navReverse.firstRight, 6, 'Expected immediate +1 on first right press in level select');
+assert.strictEqual(navReverse.beforeReverse, 6, 'Expected no extra repeat before LEVEL_NAV_REPEAT_DELAY');
+assert.strictEqual(navReverse.afterReverse, 5, 'Expected immediate reverse step when switching to left');
+
+const navRepeatCadence = run(ctxNav, `(() => {
+  gameState = STATE.LEVEL_SELECT;
+  selectedLevel = 1;
+  levelNavHoldDir = 0;
+  levelNavHoldFrames = 0;
+
+  for (const k in keys) delete keys[k];
+  for (const k in keysDown) delete keysDown[k];
+  for (const k in keysUp) delete keysUp[k];
+  for (const k in repeatCounters) delete repeatCounters[k];
+
+  setKeyDown('ArrowRight');
+  let prev = selectedLevel;
+  const stepFrames = [];
+  for (let frame = 0; frame < LEVEL_NAV_REPEAT_DELAY + LEVEL_NAV_REPEAT_INTERVAL * 5 + 6; frame++) {
+    update();
+    if (selectedLevel !== prev) {
+      stepFrames.push(frame);
+      prev = selectedLevel;
+    }
+  }
+
+  setKeyUp('ArrowRight');
+  update();
+  return {
+    stepFrames,
+    delay: LEVEL_NAV_REPEAT_DELAY,
+    interval: LEVEL_NAV_REPEAT_INTERVAL,
+  };
+})()`);
+assert(navRepeatCadence.stepFrames.length >= 4, 'Expected multiple repeated level-select steps while holding right');
+assert.strictEqual(navRepeatCadence.stepFrames[0], 0, 'Expected immediate level-select step on initial press');
+assert.strictEqual(
+  navRepeatCadence.stepFrames[1] - navRepeatCadence.stepFrames[0],
+  navRepeatCadence.delay,
+  'Expected first held-repeat step after LEVEL_NAV_REPEAT_DELAY frames'
+);
+for (let i = 2; i < navRepeatCadence.stepFrames.length; i++) {
+  assert.strictEqual(
+    navRepeatCadence.stepFrames[i] - navRepeatCadence.stepFrames[i - 1],
+    navRepeatCadence.interval,
+    'Expected held-repeat cadence to remain stable at LEVEL_NAV_REPEAT_INTERVAL frames'
+  );
+}
+
 // Walk acceleration reaches WALK_MAX_SPEED
 const walkAccel = run(ctxMov, `(() => {
   mario.vx = 0; mario.vy = 0; mario.grounded = true;
@@ -625,14 +706,23 @@ assert(
   'Ground friction should bring Mario to a stop: vx=' + friction.vx
 );
 
-// Skid: pressing left from rightward speed applies reverseControl then snaps to minStartSpeed.
-// The minStartSpeed (0.34 walk / 0.42 run) ensures immediate leftward response in 1 frame.
+// Skid: switching directions should bleed existing momentum before crossing zero.
+// This keeps turnarounds smooth while preserving quick starts from rest.
 const skid = run(ctxMov, `(() => {
-  // From max rightward speed, one left frame → vx snaps to at least -minStartSpeed
+  // From max rightward speed, one left frame should brake, not instantly flip sign.
   mario.vx = WALK_MAX_SPEED; mario.vy = 0; mario.grounded = true;
   setKeyDown('ArrowLeft');
   clearInputEdges(); updateMario();
-  const vxFromMax = mario.vx;
+  const vxAfterTurnFrame = mario.vx;
+
+  let framesToCrossZero = -1;
+  for (let i = 1; i <= 20; i++) {
+    clearInputEdges(); updateMario();
+    if (mario.vx < 0) {
+      framesToCrossZero = i;
+      break;
+    }
+  }
 
   // From rest (vx=0), one left frame → immediate leftward snap (minStartSpeed feature)
   mario.vx = 0; mario.vy = 0; mario.grounded = true;
@@ -642,15 +732,23 @@ const skid = run(ctxMov, `(() => {
   const vxFromRest = mario.vx;
   setKeyUp('ArrowLeft'); clearInputEdges();
 
-  return { vxFromMax, vxFromRest, walkCap: WALK_MAX_SPEED };
+  return { vxAfterTurnFrame, framesToCrossZero, vxFromRest, walkCap: WALK_MAX_SPEED };
 })()`);
 assert(
-  skid.vxFromMax < 0,
-  'Pressing left from max rightward speed should immediately give leftward vx: got ' + skid.vxFromMax
+  skid.vxAfterTurnFrame > 0,
+  'Direction switch should preserve rightward inertia on first turn frame: got ' + skid.vxAfterTurnFrame
 );
 assert(
-  skid.vxFromMax >= -skid.walkCap - 0.01,
-  'Skid vx should not overshoot walk cap: got ' + skid.vxFromMax
+  skid.vxAfterTurnFrame < skid.walkCap,
+  'Direction switch should reduce speed from walk cap on first turn frame: got ' + skid.vxAfterTurnFrame
+);
+assert(
+  skid.framesToCrossZero > 1,
+  'Direction switch should take multiple frames before crossing zero: frames=' + skid.framesToCrossZero
+);
+assert(
+  skid.framesToCrossZero !== -1,
+  'Direction switch should still cross zero into leftward movement within expected time'
 );
 assert(
   skid.vxFromRest < 0,

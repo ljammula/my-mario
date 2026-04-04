@@ -111,21 +111,25 @@ function updateMario() {
 
   if (left && !right) {
     mario.facing = -1;
-    if (mario.vx > 0.12) {
+    const turningFromRight = mario.vx > 0.12;
+    if (turningFromRight) {
       mario.vx -= reverseControl;
+      if (mario.vx < 0 && mario.vx > -minStartSpeed) mario.vx = -minStartSpeed;
     } else {
       mario.vx -= accel;
+      if (mario.vx > -minStartSpeed) mario.vx = Math.min(mario.vx, -minStartSpeed);
     }
-    if (mario.vx > -minStartSpeed) mario.vx = Math.min(mario.vx, -minStartSpeed);
     if (mario.vx < -maxSpd) mario.vx = -maxSpd;
   } else if (right && !left) {
     mario.facing = 1;
-    if (mario.vx < -0.12) {
+    const turningFromLeft = mario.vx < -0.12;
+    if (turningFromLeft) {
       mario.vx += reverseControl;
+      if (mario.vx > 0 && mario.vx < minStartSpeed) mario.vx = minStartSpeed;
     } else {
       mario.vx += accel;
+      if (mario.vx < minStartSpeed) mario.vx = Math.max(mario.vx, minStartSpeed);
     }
-    if (mario.vx < minStartSpeed) mario.vx = Math.max(mario.vx, minStartSpeed);
     if (mario.vx > maxSpd) mario.vx = maxSpd;
   } else {
     if (mario.grounded) {
