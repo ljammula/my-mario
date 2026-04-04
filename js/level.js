@@ -977,3 +977,86 @@ function buildLevel7() {
   }
   return grid;
 }
+
+// ============================================================
+// WORLD 8 — "Volcanic Wastes" — Athletic (very hard, mostly platforms)
+// ============================================================
+
+const Q_CONTENTS_L8 = {
+  '30,9':  'coin',
+  '33,9':  'coin',
+  '36,9':  'coin',
+  '55,8':  'mushroom',
+  '70,7':  'coin',
+  '85,8':  'star',
+  '100,9': 'coin',
+  '115,8': 'mushroom',
+  '130,7': 'coin',
+  '148,8': 'star',
+  '165,9': 'mushroom',
+};
+
+function buildLevel8() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Small ground segments — mostly platforms over pits
+  const groundSegs = [[0,8],[20,30],[48,54],[185,197],[210,223]];
+  for (const [s,e] of groundSegs)
+    for (let c=s;c<=e;c++) { setTile(c,13,'G'); setTile(c,14,'G'); }
+
+  // Pipe 1: col 5, topRow=10 (on seg 1)
+  setTile(5,10,'PT'); setTile(6,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(5,r,'PL'); setTile(6,r,'PB'); }
+
+  // Pipe 2: col 24, topRow=9 (on seg 2)
+  setTile(24,9,'PT'); setTile(25,9,'PR');
+  for (let r=10;r<=13;r++) { setTile(24,r,'PL'); setTile(25,r,'PB'); }
+
+  // Pipe 3 (piranha): col 50, topRow=10 (on ground stub seg 48-54)
+  setTile(50,10,'PT'); setTile(51,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(50,r,'PL'); setTile(51,r,'PB'); }
+
+  // Mushroom platforms across the level
+  const mPlats = [
+    [9,15,10],[17,20,9],[33,39,9],[43,48,11],[55,61,8],
+    [65,70,10],[76,82,8],[88,93,9],[98,104,11],[110,116,8],
+    [122,127,10],[133,139,9],[145,151,8],[157,163,10],[169,175,9],[179,184,11],
+  ];
+  for (const [s,e,r] of mPlats)
+    for (let c=s;c<=e;c++) setTile(c,r,'M');
+
+  // Q-blocks
+  setTile(30,9,'Q'); setTile(33,9,'Q'); setTile(36,9,'Q');
+  setTile(55,8,'Q'); setTile(70,7,'Q'); setTile(85,8,'Q');
+  setTile(100,9,'Q'); setTile(115,8,'Q'); setTile(130,7,'Q');
+  setTile(148,8,'Q'); setTile(165,9,'Q');
+
+  // Brick/H accents
+  for (let c=35;c<=38;c++) setTile(c,6,'B');
+  for (let c=78;c<=80;c++) setTile(c,5,'H');
+  for (let c=134;c<=137;c++) setTile(c,6,'B');
+  setTile(160,7,'H'); setTile(161,7,'H');
+
+  // Staircase + flagpole + castle
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r=12;r<=14;r++) setTile(199,r,'H');
+  for (let r=11;r<=14;r++) setTile(200,r,'H');
+  for (let r=10;r<=14;r++) setTile(201,r,'H');
+  for (let r= 9;r<=14;r++) setTile(202,r,'H');
+  for (let r= 8;r<=14;r++) setTile(203,r,'H');
+  for (let r= 7;r<=14;r++) setTile(204,r,'H');
+  for (let r= 6;r<=14;r++) setTile(205,r,'H');
+  for (let c=206;c<=209;c++) { setTile(c,13,'H'); setTile(c,14,'H'); }
+  setTile(210,4,'FF');
+  for (let r=5;r<=13;r++) setTile(210,r,'FP');
+  for (let c=212;c<=223;c+=2) setTile(c,8,'CA');
+  for (let r=9;r<=11;r++) for (let c=212;c<=223;c++) setTile(c,r,'CA');
+  for (let r=12;r<=13;r++) for (let c=212;c<=223;c++) {
+    if (c===216||c===217) setTile(c,r,'CD'); else setTile(c,r,'CA');
+  }
+  return grid;
+}

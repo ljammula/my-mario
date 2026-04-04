@@ -504,6 +504,8 @@ function drawSky(ctx) {
     ctx.fillStyle = '#E8A040'; // dusk/forest orange
   } else if (currentLevel === 6) {
     ctx.fillStyle = '#4A6080'; // storm coast slate-blue
+  } else if (currentLevel === 8) {
+    ctx.fillStyle = '#1A0B3C'; // volcanic deep purple
   } else {
     ctx.fillStyle = '#5C94FC';
   }
