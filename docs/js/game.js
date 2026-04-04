@@ -2,10 +2,17 @@
 // GAME — state machine + main loop
 // ============================================================
 
+// Smoothstep easing: maps linear t→[0,1] to ease-in-out curve
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+let fadeProgress  = 0; // raw linear progress 0→1
+let levelNavCooldown = 0; // frames between level-select arrow navigations
+
 // Kick off a fade-out → callback → fade-in → doneState sequence
 function startFade(callback, doneState) {
   fadeSrcState  = gameState;
   fadeAlpha     = 0;
+  fadeProgress  = 0;
   fadeDir       = 1;
   fadeCallback  = callback;
   fadeDoneState = doneState;
@@ -26,9 +33,18 @@ function update() {
       break;
 
     case STATE.LEVEL_SELECT:
+      if (levelNavCooldown > 0) levelNavCooldown--;
       if (isPressed(['ArrowLeft', 'ArrowRight'])) AudioSystem.init();
-      if (isPressed(['ArrowLeft']))  selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : 5;
-      if (isPressed(['ArrowRight'])) selectedLevel = selectedLevel < 5 ? selectedLevel + 1 : 1;
+      if (levelNavCooldown === 0) {
+        if (isPressed(['ArrowLeft'])) {
+          selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : 5;
+          levelNavCooldown = 14; // ~0.23s between steps — deliberate, not zippable
+        }
+        if (isPressed(['ArrowRight'])) {
+          selectedLevel = selectedLevel < 5 ? selectedLevel + 1 : 1;
+          levelNavCooldown = 14;
+        }
+      }
       if (isPressed(['Enter'])) {
         AudioSystem.init();
         currentLevel = selectedLevel;
@@ -41,17 +57,24 @@ function update() {
       break;
 
     case STATE.FADE: {
-      const FADE_SPEED = 1 / 20; // 20 frames per direction (0.33 sec each)
-      fadeAlpha += fadeDir * FADE_SPEED;
-      if (fadeDir === 1 && fadeAlpha >= 1) {
-        fadeAlpha = 1;
+      const FADE_FRAMES = 25; // frames per half (out or in) = 0.42s each
+      fadeProgress += 1 / FADE_FRAMES;
+      fadeAlpha = smoothstep(Math.min(fadeProgress, 1));
+      if (fadeDir === 1 && fadeProgress >= 1) {
+        fadeAlpha    = 1;
+        fadeProgress = 0;
         if (fadeCallback) { fadeCallback(); fadeCallback = null; }
         fadeDir = -1;
-      } else if (fadeDir === -1 && fadeAlpha <= 0) {
-        fadeAlpha = 0;
-        fadeDir   = 1;
-        gameState = fadeDoneState || STATE.TITLE;
-        fadeDoneState = null;
+      } else if (fadeDir === -1) {
+        // Fading in: alpha goes 1→0 as progress 0→1
+        fadeAlpha = smoothstep(Math.max(0, 1 - fadeProgress));
+        if (fadeProgress >= 1) {
+          fadeAlpha     = 0;
+          fadeProgress  = 0;
+          fadeDir       = 1;
+          gameState     = fadeDoneState || STATE.TITLE;
+          fadeDoneState = null;
+        }
       }
       break;
     }
