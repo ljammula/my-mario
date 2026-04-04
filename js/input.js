@@ -6,11 +6,14 @@ const keys    = {};
 const keysDown = {};
 const keysUp   = {};
 const repeatCounters = {};
+const REPEATABLE_KEYS = new Set(['ArrowLeft', 'ArrowRight']);
 
 function setKeyDown(code) {
   if (!keys[code]) {
     keysDown[code] = true;
-    repeatCounters[code] = INPUT_REPEAT_DELAY;
+    if (REPEATABLE_KEYS.has(code)) {
+      repeatCounters[code] = INPUT_REPEAT_DELAY;
+    }
     AudioSystem.init();
   }
   keys[code] = true;

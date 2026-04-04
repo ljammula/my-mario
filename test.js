@@ -479,6 +479,59 @@ run(ctxMov, 'currentLevel = 1; resetLevel();');
 // Stub: keep Mario perpetually grounded so physics tests are isolated from collision
 run(ctxMov, 'resolvePlayerTileCollision = function() { mario.vy = 0; return true; };');
 
+// Input repeat should only apply to navigation keys (ArrowLeft/ArrowRight)
+const enterNoRepeat = run(ctxMov, `(() => {
+  for (const k in keys) delete keys[k];
+  for (const k in keysDown) delete keysDown[k];
+  for (const k in keysUp) delete keysUp[k];
+  for (const k in repeatCounters) delete repeatCounters[k];
+
+  setKeyDown('Enter');
+  const firstPressRegistered = !!keysDown.Enter;
+  clearInputEdges();
+
+  let repeated = false;
+  for (let i = 0; i < INPUT_REPEAT_DELAY + 6; i++) {
+    updateInputRepeat();
+    if (keysDown.Enter) repeated = true;
+    clearInputEdges();
+  }
+
+  const hasEnterRepeatCounter = Object.prototype.hasOwnProperty.call(repeatCounters, 'Enter');
+  setKeyUp('Enter');
+  clearInputEdges();
+  return { firstPressRegistered, repeated, hasEnterRepeatCounter };
+})()`);
+assert(enterNoRepeat.firstPressRegistered, 'Expected Enter initial key press edge');
+assert(!enterNoRepeat.hasEnterRepeatCounter, 'Enter should not be tracked by input repeat counters');
+assert(!enterNoRepeat.repeated, 'Enter should not auto-repeat while held (prevents pause/resume toggling)');
+
+const arrowRightRepeats = run(ctxMov, `(() => {
+  for (const k in keys) delete keys[k];
+  for (const k in keysDown) delete keysDown[k];
+  for (const k in keysUp) delete keysUp[k];
+  for (const k in repeatCounters) delete repeatCounters[k];
+
+  setKeyDown('ArrowRight');
+  clearInputEdges();
+
+  let repeatFrame = -1;
+  for (let i = 1; i <= INPUT_REPEAT_DELAY + 2; i++) {
+    updateInputRepeat();
+    if (keysDown.ArrowRight && repeatFrame === -1) repeatFrame = i;
+    clearInputEdges();
+  }
+
+  setKeyUp('ArrowRight');
+  clearInputEdges();
+  return { repeatFrame, repeatDelay: INPUT_REPEAT_DELAY };
+})()`);
+assert.strictEqual(
+  arrowRightRepeats.repeatFrame,
+  arrowRightRepeats.repeatDelay,
+  'ArrowRight should auto-repeat after INPUT_REPEAT_DELAY frames for menu navigation'
+);
+
 // Walk acceleration reaches WALK_MAX_SPEED
 const walkAccel = run(ctxMov, `(() => {
   mario.vx = 0; mario.vy = 0; mario.grounded = true;
