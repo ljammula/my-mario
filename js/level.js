@@ -774,3 +774,100 @@ function buildLevel5() {
 
   return grid;
 }
+
+// ============================================================
+// WORLD 6 — "Storm Coast" — Overworld (harder than World 4)
+// ============================================================
+
+const Q_CONTENTS_L6 = {
+  '22,9':  'coin',
+  '25,9':  'mushroom',
+  '28,9':  'coin',
+  '55,5':  'star',
+  '58,5':  'coin',
+  '61,5':  'coin',
+  '90,9':  'mushroom',
+  '93,9':  'coin',
+  '96,9':  'coin',
+  '120,5': 'star',
+  '123,5': 'mushroom',
+  '155,9': 'coin',
+  '158,9': 'coin',
+};
+
+function buildLevel6() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Ground segments — big gaps (6-8 tiles) for storm-coast feel
+  const groundSegs = [
+    [0,30],[38,70],[79,110],[118,148],[156,180],[187,197],[210,223]
+  ];
+  for (const [s,e] of groundSegs)
+    for (let c = s; c <= e; c++) { setTile(c,13,'G'); setTile(c,14,'G'); }
+
+  // Pipes: [colL, topRow]
+  setTile(12,11,'PT'); setTile(13,11,'PR');
+  for (let r=12;r<=13;r++) { setTile(12,r,'PL'); setTile(13,r,'PB'); }
+
+  setTile(48,10,'PT'); setTile(49,10,'PR');           // piranha
+  for (let r=11;r<=13;r++) { setTile(48,r,'PL'); setTile(49,r,'PB'); }
+
+  setTile(64,9,'PT'); setTile(65,9,'PR');
+  for (let r=10;r<=13;r++) { setTile(64,r,'PL'); setTile(65,r,'PB'); }
+
+  setTile(88,8,'PT'); setTile(89,8,'PR');
+  for (let r=9;r<=13;r++) { setTile(88,r,'PL'); setTile(89,r,'PB'); }
+
+  setTile(168,11,'PT'); setTile(169,11,'PR');
+  for (let r=12;r<=13;r++) { setTile(168,r,'PL'); setTile(169,r,'PB'); }
+
+  // Q-blocks row 9 cluster (seg 1)
+  setTile(22,9,'Q'); setTile(25,9,'Q'); setTile(28,9,'Q');
+  for (let c=20;c<=30;c++) if (grid[9][c]!=='Q') setTile(c,9,'B');
+
+  // Q-blocks row 5 cluster (seg 2)
+  setTile(55,5,'Q'); setTile(58,5,'Q'); setTile(61,5,'Q');
+  for (let c=53;c<=63;c++) if (grid[5][c]!=='Q') setTile(c,5,'B');
+
+  // Q-blocks row 9 cluster (seg 3)
+  setTile(90,9,'Q'); setTile(93,9,'Q'); setTile(96,9,'Q');
+  for (let c=91;c<=95;c++) if (grid[9][c]!=='Q') setTile(c,9,'B');
+
+  // Q-blocks row 5 cluster (seg 4)
+  setTile(120,5,'Q'); setTile(123,5,'Q');
+  for (let c=118;c<=125;c++) if (grid[5][c]!=='Q') setTile(c,5,'B');
+
+  // Q-blocks row 9 (seg 5)
+  setTile(155,9,'Q'); setTile(158,9,'Q');
+  for (let c=153;c<=160;c++) if (grid[9][c]!=='Q') setTile(c,9,'B');
+
+  // Standalone brick row mid-level
+  for (let c=100;c<=108;c++) setTile(c,7,'B');
+
+  // Elevated hard-block platforms row 8
+  for (let c=40;c<=46;c++) setTile(c,8,'H');
+  for (let c=130;c<=137;c++) setTile(c,8,'H');
+
+  // Staircase + flagpole + castle
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r=12;r<=14;r++) setTile(199,r,'H');
+  for (let r=11;r<=14;r++) setTile(200,r,'H');
+  for (let r=10;r<=14;r++) setTile(201,r,'H');
+  for (let r= 9;r<=14;r++) setTile(202,r,'H');
+  for (let r= 8;r<=14;r++) setTile(203,r,'H');
+  for (let r= 7;r<=14;r++) setTile(204,r,'H');
+  for (let r= 6;r<=14;r++) setTile(205,r,'H');
+  for (let c=206;c<=209;c++) { setTile(c,13,'H'); setTile(c,14,'H'); }
+  setTile(210,4,'FF');
+  for (let r=5;r<=13;r++) setTile(210,r,'FP');
+  for (let c=212;c<=223;c+=2) setTile(c,8,'CA');
+  for (let r=9;r<=11;r++) for (let c=212;c<=223;c++) setTile(c,r,'CA');
+  for (let r=12;r<=13;r++) for (let c=212;c<=223;c++) {
+    if (c===216||c===217) setTile(c,r,'CD'); else setTile(c,r,'CA');
+  }
+  return grid;
+}

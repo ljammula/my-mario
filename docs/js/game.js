@@ -37,11 +37,11 @@ function update() {
       if (isPressed(['ArrowLeft', 'ArrowRight'])) AudioSystem.init();
       if (levelNavCooldown === 0) {
         if (isPressed(['ArrowLeft'])) {
-          selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : 5;
-          levelNavCooldown = 14; // ~0.23s between steps — deliberate, not zippable
+          selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : MAX_LEVEL;
+          levelNavCooldown = 14;
         }
         if (isPressed(['ArrowRight'])) {
-          selectedLevel = selectedLevel < 5 ? selectedLevel + 1 : 1;
+          selectedLevel = selectedLevel < MAX_LEVEL ? selectedLevel + 1 : 1;
           levelNavCooldown = 14;
         }
       }
@@ -143,7 +143,7 @@ function update() {
       stateTimer--;
       if (stateTimer <= 0) {
         startFade(() => {
-          currentLevel = (currentLevel % 5) + 1;
+          currentLevel = (currentLevel % MAX_LEVEL) + 1;
           resetLevel(true);
           stateTimer   = 3 * 60;
           musicStarted = false;

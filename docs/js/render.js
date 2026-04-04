@@ -501,6 +501,8 @@ function drawSky(ctx) {
     ctx.fillStyle = '#79B8FF';
   } else if (currentLevel === 4) {
     ctx.fillStyle = '#E8A040'; // dusk/forest orange
+  } else if (currentLevel === 6) {
+    ctx.fillStyle = '#4A6080'; // storm coast slate-blue
   } else {
     ctx.fillStyle = '#5C94FC';
   }
@@ -529,44 +531,51 @@ function drawLevelSelectScreen(ctx) {
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 22px monospace';
+  ctx.font = 'bold 20px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('SELECT WORLD', CANVAS_W/2, 80);
+  ctx.fillText('SELECT WORLD', CANVAS_W/2, 52);
 
-  const themes = ['OVERWORLD','UNDERGROUND','ATHLETIC','FOREST','CASTLE'];
-  const boxW = 72, boxH = 56, gap = 14;
-  const totalW = 5 * boxW + 4 * gap;
+  const themes = [
+    'OVERWORLD','UNDERGROUND','ATHLETIC','FOREST','CASTLE',
+    'STORM','DUNGEON','VOLCANIC','CITADEL','FORTRESS',
+  ];
+  const cols = 5;
+  const boxW = 88, boxH = 52, gapX = 8, gapY = 10;
+  const totalW = cols * boxW + (cols - 1) * gapX;
   const startX = (CANVAS_W - totalW) / 2;
-  const boxY   = CANVAS_H / 2 - boxH / 2;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < MAX_LEVEL; i++) {
     const level = i + 1;
-    const bx = startX + i * (boxW + gap);
+    const col   = i % cols;
+    const row   = Math.floor(i / cols);
+    const bx    = startX + col * (boxW + gapX);
+    const by    = 80 + row * (boxH + gapY);
 
     const isSelected = level === selectedLevel;
-    ctx.fillStyle = isSelected ? '#FFD700' : '#333333';
-    ctx.strokeStyle = isSelected ? '#FFFFFF' : '#666666';
-    ctx.lineWidth = isSelected ? 3 : 1;
+    ctx.fillStyle   = isSelected ? '#FFD700' : '#2A2A2A';
+    ctx.strokeStyle = isSelected ? '#FFFFFF'  : '#555555';
+    ctx.lineWidth   = isSelected ? 2 : 1;
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(bx, boxY, boxW, boxH, 6) : ctx.rect(bx, boxY, boxW, boxH);
-    ctx.fill();
-    ctx.stroke();
+    if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 5);
+    else               ctx.rect(bx, by, boxW, boxH);
+    ctx.fill(); ctx.stroke();
 
-    ctx.fillStyle = isSelected ? '#000000' : '#AAAAAA';
-    ctx.font = `bold 16px monospace`;
+    ctx.fillStyle = isSelected ? '#000000' : '#CCCCCC';
+    ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('1-' + level, bx + boxW/2, boxY + 18);
+    ctx.fillText('1-' + level, bx + boxW/2, by + 16);
     ctx.font = '9px monospace';
-    ctx.fillText(themes[i], bx + boxW/2, boxY + 36);
+    ctx.fillStyle = isSelected ? '#333333' : '#888888';
+    ctx.fillText(themes[i] || '', bx + boxW/2, by + 34);
   }
 
-  // Arrow hint
   if (Math.floor(blinkTimer / 25) % 2 === 0) {
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '12px monospace';
+    ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('\u2190 \u2192  CHOOSE    ENTER = PLAY', CANVAS_W/2, CANVAS_H/2 + 70);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\u2190 \u2192  CHOOSE    ENTER = PLAY', CANVAS_W/2, CANVAS_H - 30);
   }
 }
 
