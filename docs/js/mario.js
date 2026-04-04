@@ -283,6 +283,7 @@ function damageMario() {
     mario.invincibleFrames = 2 * 60;
   } else if (mario.form === 'super') {
     mario.form             = 'small';
+    mario.y               += 8;
     mario.h                = 16;
     mario.invincibleFrames = 2 * 60;
   } else {

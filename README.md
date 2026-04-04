@@ -113,6 +113,7 @@ The `.github/workflows/deploy.yml` uploads `docs/` directly — no build step ne
 ```bash
 npm install        # installs Playwright
 node test.js       # run gameplay tests (if present)
+npm run playthrough # headless 10-transition browser playthrough + error capture
 ```
 
 Automated Playwright tests cover: module loading, PLAYING state, Mario movement, pause/resume, Q-block bonk, mushroom spawn, goomba AI, fireball, damage chain, death by pit, camera follow, tile helpers.
