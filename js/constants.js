@@ -60,7 +60,7 @@ const T = {
 
 const SOLID_TILES = new Set(['G','B','M','Q','U','H','PT','PR','PL','PB','CA','CD']);
 
-const MAX_LEVEL = 10; // updated as levels are added; currently 6
+const MAX_LEVEL = 10; // all 10 levels implemented
 
 // Game states
 const STATE = {

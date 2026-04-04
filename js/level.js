@@ -1184,3 +1184,143 @@ function buildLevel9() {
   }
   return grid;
 }
+
+// ============================================================
+// WORLD 10 — "The Final Fortress" — Ultimate Underground Castle
+// ============================================================
+
+const Q_CONTENTS_L10 = {
+  '10,3':   'coin',
+  '15,3':   'mushroom',
+  '22,10':  'coin',
+  '38,7':   'coin',
+  '44,3':   'star',
+  '52,10':  'coin',
+  '68,7':   'coin',
+  '75,3':   'coin',
+  '96,10':  'mushroom',
+  '102,7':  'coin',
+  '108,3':  'star',
+  '125,10': 'coin',
+  '140,7':  'coin',
+  '165,3':  'coin',
+};
+
+function buildLevel10() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Full H ceiling (rows 0-1)
+  for (let c = 0; c < 198; c++) { setTile(c,0,'H'); setTile(c,1,'H'); }
+
+  // Full G floor (rows 13-14)
+  for (let c = 0; c < 198; c++) { setTile(c,13,'G'); setTile(c,14,'G'); }
+
+  // Wall segments — alternating LOW (rows 10-12 open) and MID (rows 6-8 open) gaps
+  // so the level is always navigable by jumping between floor and mid platforms
+  // Wall A (cols 28-29): LOW gap
+  for (let r = 2; r <= 9; r++) { setTile(28,r,'H'); setTile(29,r,'H'); }
+
+  // Wall B (cols 58-59): MID gap
+  for (let r = 2; r <= 12; r++) {
+    if (r >= 6 && r <= 8) continue;
+    setTile(58,r,'H'); setTile(59,r,'H');
+  }
+
+  // Wall C (cols 88-89): LOW gap
+  for (let r = 2; r <= 9; r++) { setTile(88,r,'H'); setTile(89,r,'H'); }
+
+  // Wall D (cols 118-119): MID gap
+  for (let r = 2; r <= 12; r++) {
+    if (r >= 6 && r <= 8) continue;
+    setTile(118,r,'H'); setTile(119,r,'H');
+  }
+
+  // Wall E (cols 148-149): LOW gap
+  for (let r = 2; r <= 9; r++) { setTile(148,r,'H'); setTile(149,r,'H'); }
+
+  // Wall F (cols 178-179): MID gap
+  for (let r = 2; r <= 12; r++) {
+    if (r >= 6 && r <= 8) continue;
+    setTile(178,r,'H'); setTile(179,r,'H');
+  }
+
+  // Platform bridges between each wall pair at rows 7 and 9
+  const bridgeRanges = [[33,37],[63,67],[93,97],[123,127],[153,157],[183,187]];
+  for (const [s,e] of bridgeRanges) {
+    for (let c=s;c<=e;c++) { setTile(c,7,'H'); setTile(c,9,'H'); }
+  }
+
+  // Pipes — 4 obstacle pipes + 1 piranha
+  setTile(7,11,'PT');  setTile(8,11,'PR');
+  setTile(7,12,'PL');  setTile(8,12,'PB');
+  setTile(7,13,'PL');  setTile(8,13,'PB');
+
+  setTile(35,10,'PT'); setTile(36,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(35,r,'PL'); setTile(36,r,'PB'); }
+
+  // Piranha pipe: col 105, topRow=11
+  setTile(105,11,'PT'); setTile(106,11,'PR');
+  setTile(105,12,'PL'); setTile(106,12,'PB');
+  setTile(105,13,'PL'); setTile(106,13,'PB');
+
+  setTile(158,9,'PT');  setTile(159,9,'PR');
+  for (let r=10;r<=13;r++) { setTile(158,r,'PL'); setTile(159,r,'PB'); }
+
+  setTile(170,9,'H');  setTile(171,9,'H');   // platform base for pipe
+  setTile(170,10,'PT'); setTile(171,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(170,r,'PL'); setTile(171,r,'PB'); }
+
+  // Q-blocks — 14 total across all three tier heights
+  // Row 3 (near ceiling, reachable by jumping from row 7 bridges)
+  setTile(10,3,'Q'); setTile(15,3,'Q'); setTile(44,3,'Q');
+  setTile(75,3,'Q'); setTile(108,3,'Q'); setTile(165,3,'Q');
+
+  // Row 7 (mid tier)
+  setTile(38,7,'Q'); setTile(68,7,'Q'); setTile(102,7,'Q'); setTile(140,7,'Q');
+
+  // Row 10 (floor tier)
+  setTile(22,10,'Q'); setTile(52,10,'Q'); setTile(96,10,'Q'); setTile(125,10,'Q');
+
+  // Brick accents flanking Q-blocks (row 3)
+  setTile(8,3,'B');  setTile(9,3,'B');  setTile(11,3,'B'); setTile(12,3,'B');
+  setTile(13,3,'B'); setTile(14,3,'B'); setTile(16,3,'B'); setTile(17,3,'B');
+  setTile(42,3,'B'); setTile(43,3,'B'); setTile(45,3,'B'); setTile(46,3,'B');
+  setTile(73,3,'B'); setTile(74,3,'B'); setTile(76,3,'B'); setTile(77,3,'B');
+  setTile(106,3,'B');setTile(107,3,'B');setTile(109,3,'B');setTile(110,3,'B');
+  setTile(163,3,'B');setTile(164,3,'B');setTile(166,3,'B');setTile(167,3,'B');
+
+  // Brick accents flanking Q-blocks (row 7)
+  setTile(36,7,'B'); setTile(37,7,'B'); setTile(39,7,'B'); setTile(40,7,'B');
+  setTile(66,7,'B'); setTile(67,7,'B'); setTile(69,7,'B'); setTile(70,7,'B');
+  setTile(100,7,'B');setTile(101,7,'B');setTile(103,7,'B');setTile(104,7,'B');
+  setTile(138,7,'B');setTile(139,7,'B');setTile(141,7,'B');setTile(142,7,'B');
+
+  // Brick accents flanking Q-blocks (row 10)
+  setTile(20,10,'B');setTile(21,10,'B');setTile(23,10,'B');setTile(24,10,'B');
+  setTile(50,10,'B');setTile(51,10,'B');setTile(53,10,'B');setTile(54,10,'B');
+  setTile(94,10,'B');setTile(95,10,'B');setTile(97,10,'B');setTile(98,10,'B');
+  setTile(123,10,'B');setTile(124,10,'B');setTile(126,10,'B');setTile(127,10,'B');
+
+  // Staircase + flagpole + castle
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r=12;r<=14;r++) setTile(199,r,'H');
+  for (let r=11;r<=14;r++) setTile(200,r,'H');
+  for (let r=10;r<=14;r++) setTile(201,r,'H');
+  for (let r= 9;r<=14;r++) setTile(202,r,'H');
+  for (let r= 8;r<=14;r++) setTile(203,r,'H');
+  for (let r= 7;r<=14;r++) setTile(204,r,'H');
+  for (let r= 6;r<=14;r++) setTile(205,r,'H');
+  for (let c=206;c<=209;c++) { setTile(c,13,'H'); setTile(c,14,'H'); }
+  setTile(210,4,'FF');
+  for (let r=5;r<=13;r++) setTile(210,r,'FP');
+  for (let c=212;c<=223;c+=2) setTile(c,8,'CA');
+  for (let r=9;r<=11;r++) for (let c=212;c<=223;c++) setTile(c,r,'CA');
+  for (let r=12;r<=13;r++) for (let c=212;c<=223;c++) {
+    if (c===216||c===217) setTile(c,r,'CD'); else setTile(c,r,'CA');
+  }
+  return grid;
+}
