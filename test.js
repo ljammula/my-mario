@@ -604,6 +604,199 @@ assert(koopaTopStompChecks.marioVy < 0, 'Expected stomp bounce (negative vy) aft
 assert.strictEqual(koopaTopStompChecks.damageDelta, 0, 'Expected no Mario damage when stomping Koopa from above');
 assert.strictEqual(koopaTopStompChecks.marioForm, 'super', 'Expected Koopa stomp not to downgrade Mario form');
 
+const highVelocityStompChecks = run(
+  ctx,
+  `(() => {
+    const damageBefore = damageCalls;
+    mario = createMario();
+    mario.x = 140;
+    mario.y = 166;
+    mario.vy = 18;
+    mario.w = 12;
+    mario.h = 16;
+    mario.dead = false;
+
+    const g = createEnemyGoomba(8, 13, { speed: 0 });
+    g.x = 140;
+    g.y = 176;
+    g.w = 16;
+    g.h = 16;
+    g.vx = 0;
+    g.state = 'walk';
+
+    checkEnemyMarioCollision(g);
+    return {
+      enemyState: g.state,
+      marioVy: mario.vy,
+      marioDead: mario.dead,
+      damageDelta: damageCalls - damageBefore,
+    };
+  })()`
+);
+assert.strictEqual(highVelocityStompChecks.enemyState, 'squish', 'Expected high-velocity top-down stomp to defeat Goomba');
+assert(highVelocityStompChecks.marioVy < 0, 'Expected high-velocity stomp to bounce Mario upward');
+assert.strictEqual(highVelocityStompChecks.marioDead, false, 'Expected high-velocity stomp to keep Mario alive');
+assert.strictEqual(highVelocityStompChecks.damageDelta, 0, 'Expected no damage on high-velocity stomp');
+
+const koopaShellInteractionChecks = run(
+  ctx,
+  `(() => {
+    const damageBefore = damageCalls;
+    mario = createMario();
+    mario.x = 120;
+    mario.y = 175.5;
+    mario.vy = 2;
+    mario.w = 12;
+    mario.h = 16;
+    mario.dead = false;
+
+    const k = createEnemyKoopa(7, 13, { speed: 0 });
+    k.x = 120;
+    k.y = 176;
+    k.w = 14;
+    k.h = 24;
+    k.vx = 0;
+    k.state = 'walk';
+
+    checkEnemyMarioCollision(k);
+    const afterFirstState = k.state;
+
+    mario.x = 110;
+    mario.y = 175.5;
+    mario.vy = 3;
+    checkEnemyMarioCollision(k);
+
+    return {
+      afterFirstState,
+      afterSecondState: k.state,
+      shellVx: k.vx,
+      marioDead: mario.dead,
+      damageDelta: damageCalls - damageBefore,
+    };
+  })()`
+);
+assert.strictEqual(koopaShellInteractionChecks.afterFirstState, 'shell', 'Expected first Koopa stomp to create shell state');
+assert.strictEqual(koopaShellInteractionChecks.afterSecondState, 'shell_moving', 'Expected stomp on shell to kick Koopa shell');
+assert(koopaShellInteractionChecks.shellVx > 0, 'Expected Koopa shell kick direction to match Mario side');
+assert.strictEqual(koopaShellInteractionChecks.marioDead, false, 'Expected Koopa shell stomp sequence to keep Mario alive');
+assert.strictEqual(koopaShellInteractionChecks.damageDelta, 0, 'Expected no damage during Koopa stomp-to-shell interaction');
+
+const sideHitDamageChecks = run(
+  ctx,
+  `(() => {
+    const damageBefore = damageCalls;
+    mario = createMario();
+    mario.x = 150;
+    mario.y = 176;
+    mario.vy = 0;
+    mario.w = 12;
+    mario.h = 16;
+    mario.dead = false;
+
+    const g = createEnemyGoomba(9, 13, { speed: 0 });
+    g.x = 150;
+    g.y = 176;
+    g.w = 16;
+    g.h = 16;
+    g.vx = 0;
+    g.state = 'walk';
+
+    checkEnemyMarioCollision(g);
+    return {
+      enemyState: g.state,
+      marioDead: mario.dead,
+      damageDelta: damageCalls - damageBefore,
+    };
+  })()`
+);
+assert.strictEqual(sideHitDamageChecks.enemyState, 'walk', 'Expected side collision not to stomp-kill enemy');
+assert.strictEqual(sideHitDamageChecks.damageDelta, 1, 'Expected side collision to damage Mario');
+assert.strictEqual(sideHitDamageChecks.marioDead, false, 'Expected damage handler stub to avoid forcing death in test context');
+
+const chainStompChecks = run(
+  ctx,
+  `(() => {
+    const damageBefore = damageCalls;
+    mario = createMario();
+    mario.x = 160;
+    mario.y = 166;
+    mario.vy = 3;
+    mario.w = 12;
+    mario.h = 16;
+    mario.grounded = false;
+    mario.dead = false;
+
+    const g1 = createEnemyGoomba(10, 13, { speed: 0 });
+    g1.x = 160;
+    g1.y = 176;
+    g1.state = 'walk';
+    checkEnemyMarioCollision(g1);
+
+    mario.x = 178;
+    mario.y = 166;
+    mario.vy = 4;
+    mario.grounded = false;
+
+    const g2 = createEnemyGoomba(11, 13, { speed: 0 });
+    g2.x = 178;
+    g2.y = 176;
+    g2.state = 'walk';
+    checkEnemyMarioCollision(g2);
+
+    return {
+      firstState: g1.state,
+      secondState: g2.state,
+      marioVy: mario.vy,
+      marioGrounded: mario.grounded,
+      marioDead: mario.dead,
+      damageDelta: damageCalls - damageBefore,
+    };
+  })()`
+);
+assert.strictEqual(chainStompChecks.firstState, 'squish', 'Expected first enemy in chain stomp to be defeated');
+assert.strictEqual(chainStompChecks.secondState, 'squish', 'Expected second enemy in chain stomp to be defeated');
+assert(chainStompChecks.marioVy < 0, 'Expected chain stomp to keep bounce behavior on second stomp');
+assert.strictEqual(chainStompChecks.marioGrounded, false, 'Expected chain stomp sequence to remain airborne between stomps');
+assert.strictEqual(chainStompChecks.marioDead, false, 'Expected chain stomp sequence to keep Mario alive');
+assert.strictEqual(chainStompChecks.damageDelta, 0, 'Expected no damage during chain stomp');
+
+const stompConsistencyAcrossLevelsChecks = run(
+  ctx,
+  `(() => {
+    const failures = [];
+    for (let level = 1; level <= MAX_LEVEL; level++) {
+      currentLevel = level;
+      resetLevel(false);
+
+      const damageBefore = damageCalls;
+      mario.x = 200;
+      mario.y = 166;
+      mario.vy = 3;
+      mario.w = 12;
+      mario.h = 16;
+      mario.dead = false;
+      mario.starFrames = 0;
+
+      const g = createEnemyGoomba(12, 13, { speed: 0 });
+      g.x = 200;
+      g.y = 176;
+      g.w = 16;
+      g.h = 16;
+      g.state = 'walk';
+
+      checkEnemyMarioCollision(g);
+      const stompWorked = g.state === 'squish' && mario.vy < 0 && (damageCalls - damageBefore) === 0 && !mario.dead;
+      if (!stompWorked) failures.push(level);
+    }
+    return failures;
+  })()`
+);
+assert.strictEqual(
+  stompConsistencyAcrossLevelsChecks.length,
+  0,
+  'Expected stomp behavior consistency across all levels, failed levels: ' + stompConsistencyAcrossLevelsChecks.join(', ')
+);
+
 const ctxBomb = createContext();
 loadScripts(ctxBomb, ['js/constants.js', 'js/level.js', 'js/state.js', 'js/tiles.js', 'js/collision.js', 'js/mario.js', 'js/items.js']);
 const bombPowerChecks = run(
