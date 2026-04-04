@@ -1060,3 +1060,127 @@ function buildLevel8() {
   }
   return grid;
 }
+
+// ============================================================
+// WORLD 9 — "Sky Citadel" — Hard Overworld (very high enemy density)
+// ============================================================
+
+const Q_CONTENTS_L9 = {
+  '18,9':  'coin',
+  '22,9':  'coin',
+  '26,9':  'coin',
+  '42,7':  'mushroom',
+  '60,5':  'coin',
+  '64,5':  'coin',
+  '80,7':  'coin',
+  '95,9':  'star',
+  '110,7': 'mushroom',
+  '130,5': 'coin',
+  '134,5': 'coin',
+  '150,7': 'star',
+  '170,9': 'mushroom',
+};
+
+function buildLevel9() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Ground segments
+  const groundSegs = [
+    [0,24],[30,35],[41,65],[71,76],[82,110],[116,120],[126,197],[210,223]
+  ];
+  for (const [s,e] of groundSegs)
+    for (let c=s;c<=e;c++) { setTile(c,13,'G'); setTile(c,14,'G'); }
+
+  // Pipes: [colL, topRow]
+  setTile(8,9,'PT'); setTile(9,9,'PR');
+  for (let r=10;r<=13;r++) { setTile(8,r,'PL'); setTile(9,r,'PB'); }
+
+  // Pipe 2 moved to col 42 (within seg 3 starting at col 41, no half-floating)
+  setTile(42,10,'PT'); setTile(43,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(42,r,'PL'); setTile(43,r,'PB'); }
+
+  setTile(55,8,'PT'); setTile(56,8,'PR');
+  for (let r=9;r<=13;r++) { setTile(55,r,'PL'); setTile(56,r,'PB'); }
+
+  setTile(90,11,'PT'); setTile(91,11,'PR');
+  for (let r=12;r<=13;r++) { setTile(90,r,'PL'); setTile(91,r,'PB'); }
+
+  // Pipe 5 (piranha): col 130, topRow=10
+  setTile(130,10,'PT'); setTile(131,10,'PR');
+  for (let r=11;r<=13;r++) { setTile(130,r,'PL'); setTile(131,r,'PB'); }
+
+  // Brick tower walls (row 5)
+  for (let c=16;c<=26;c++) setTile(c,5,'B');
+  for (let c=58;c<=69;c++) setTile(c,5,'B');
+  for (let c=128;c<=139;c++) setTile(c,5,'B');
+
+  // Floating brick platforms row 7
+  for (let c=12;c<=20;c++) setTile(c,7,'B');
+  for (let c=44;c<=52;c++) setTile(c,7,'B');
+  for (let c=84;c<=92;c++) setTile(c,7,'B');
+  for (let c=140;c<=148;c++) setTile(c,7,'B');
+  for (let c=170;c<=178;c++) setTile(c,7,'B');
+
+  // Floating brick platforms row 9
+  for (let c=18;c<=28;c++) setTile(c,9,'B');
+  for (let c=62;c<=70;c++) setTile(c,9,'B');
+  for (let c=104;c<=112;c++) setTile(c,9,'B');
+  for (let c=150;c<=158;c++) setTile(c,9,'B');
+
+  // Hard-block rest platforms row 8
+  for (let c=34;c<=39;c++) setTile(c,8,'H');
+  for (let c=74;c<=80;c++) setTile(c,8,'H');
+  for (let c=118;c<=124;c++) setTile(c,8,'H');
+  for (let c=162;c<=167;c++) setTile(c,8,'H');
+
+  // Mini H-staircases (challenge structures mid-level)
+  // Structure 1: cols 95-102
+  setTile(95,12,'H');
+  setTile(96,11,'H'); setTile(96,12,'H');
+  setTile(97,10,'H'); setTile(97,11,'H'); setTile(97,12,'H');
+  setTile(98,9,'H');  setTile(98,10,'H'); setTile(98,11,'H'); setTile(98,12,'H');
+  setTile(99,9,'H');  setTile(99,10,'H'); setTile(99,11,'H'); setTile(99,12,'H');
+  setTile(100,10,'H');setTile(100,11,'H');setTile(100,12,'H');
+  setTile(101,11,'H');setTile(101,12,'H');
+  setTile(102,12,'H');
+
+  // Structure 2: cols 155-162
+  setTile(155,12,'H');
+  setTile(156,11,'H'); setTile(156,12,'H');
+  setTile(157,10,'H'); setTile(157,11,'H'); setTile(157,12,'H');
+  setTile(158,9,'H');  setTile(158,10,'H');setTile(158,11,'H');setTile(158,12,'H');
+  setTile(159,9,'H');  setTile(159,10,'H');setTile(159,11,'H');setTile(159,12,'H');
+  setTile(160,10,'H'); setTile(160,11,'H');setTile(160,12,'H');
+  setTile(161,11,'H'); setTile(161,12,'H');
+  setTile(162,12,'H');
+
+  // Q-blocks (placed after B platforms so Q overwrites B where overlapping)
+  setTile(18,9,'Q'); setTile(22,9,'Q'); setTile(26,9,'Q');
+  setTile(42,7,'Q'); setTile(60,5,'Q'); setTile(64,5,'Q');
+  setTile(80,7,'Q'); setTile(95,9,'Q'); setTile(110,7,'Q');
+  setTile(130,5,'Q'); setTile(134,5,'Q'); setTile(150,7,'Q');
+  setTile(170,9,'Q');
+
+  // Staircase + flagpole + castle
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r=12;r<=14;r++) setTile(199,r,'H');
+  for (let r=11;r<=14;r++) setTile(200,r,'H');
+  for (let r=10;r<=14;r++) setTile(201,r,'H');
+  for (let r= 9;r<=14;r++) setTile(202,r,'H');
+  for (let r= 8;r<=14;r++) setTile(203,r,'H');
+  for (let r= 7;r<=14;r++) setTile(204,r,'H');
+  for (let r= 6;r<=14;r++) setTile(205,r,'H');
+  for (let c=206;c<=209;c++) { setTile(c,13,'H'); setTile(c,14,'H'); }
+  setTile(210,4,'FF');
+  for (let r=5;r<=13;r++) setTile(210,r,'FP');
+  for (let c=212;c<=223;c+=2) setTile(c,8,'CA');
+  for (let r=9;r<=11;r++) for (let c=212;c<=223;c++) setTile(c,r,'CA');
+  for (let r=12;r<=13;r++) for (let c=212;c<=223;c++) {
+    if (c===216||c===217) setTile(c,r,'CD'); else setTile(c,r,'CA');
+  }
+  return grid;
+}

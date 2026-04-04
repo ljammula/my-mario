@@ -117,6 +117,9 @@ function getLevelAreaData() {
   if (currentLevel === 8) {
     return { grid: buildLevel8(), qContents: Q_CONTENTS_L8 };
   }
+  if (currentLevel === 9) {
+    return { grid: buildLevel9(), qContents: Q_CONTENTS_L9 };
+  }
   if (currentArea === 'hidden') {
     return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
   }
@@ -155,6 +158,24 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(44, 12));
     enemies.push(createEnemyKoopa(100, 12));
     enemies.push(createEnemyKoopa(145, 12));
+    return;
+  }
+
+  if (currentLevel === 9) {
+    const goombas = [
+      [2,12],[5,12],[10,12],[15,12],[20,12],[31,12],[33,12],
+      [43,12],[48,12],[53,12],[61,12],[67,12],[83,12],[88,12],
+      [93,12],[127,12],[140,12],[150,12],[160,12],[175,12],[180,12],[190,12],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(14,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(46,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(86,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(99,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(111,6,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(142,6,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(162,7,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(172,6,{edgeAware:true,speed:1.3}));
     return;
   }
 
@@ -292,6 +313,21 @@ function configurePiranha() {
       baseY:   10 * TILE,
       targetY:  8 * TILE,
       pipeX: 75 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 9) {
+    piranha = {
+      x: 130 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 130 * TILE + 8,
     };
     return;
   }
