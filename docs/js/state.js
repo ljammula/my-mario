@@ -29,6 +29,7 @@ let fadeAlpha     = 0;     // 0=transparent, 1=black
 let fadeDir       = 1;     // 1=fade-out (darken), -1=fade-in (brighten)
 let fadeCallback  = null;  // called once fully black (prepares next scene)
 let fadeDoneState = null;  // gameState to enter after fade-in completes
+let fadeSrcState  = null;  // gameState we were in when fade started
 let selectedLevel = 1;
 
 // --------------- Entity factories ---------------
@@ -173,7 +174,7 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(42, 6, { edgeAware: true, speed: 1.3 }));
     enemies.push(createEnemyKoopa(90, 6, { edgeAware: true, speed: 1.3 }));
     enemies.push(createEnemyKoopa(150, 6, { edgeAware: true, speed: 1.3 }));
-    enemies.push(createEnemyKoopa(172, 8, { edgeAware: true, speed: 1.4 }));
+    enemies.push(createEnemyKoopa(165, 10, { edgeAware: true, speed: 1.4 }));
     return;
   }
 

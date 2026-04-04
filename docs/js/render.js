@@ -637,28 +637,50 @@ function render(ctx) {
     return;
   }
   if (gameState === STATE.FADE) {
-    // Show the most recently rendered game scene behind the overlay.
-    // Fading out (fadeDir=1): game world is visible and darkening.
-    // Fading in (fadeDir=-1): destination black screen brightening.
-    if (fadeDir === 1 && grid) {
-      drawSky(ctx);
-      const startCol = Math.max(0, Math.floor(cameraX / TILE) - 1);
-      const endCol   = Math.min(LEVEL_COLS - 1, Math.floor((cameraX + LOGICAL_W) / TILE) + 2);
-      for (let r = 0; r < LEVEL_ROWS; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-          const tile = grid[r][c];
-          if (tile !== '.') drawTile(ctx, tile, c, r);
+    if (fadeDir === 1) {
+      // Fade-out: draw the source screen we're leaving
+      if (fadeSrcState === STATE.TITLE) {
+        drawTitleScreen(ctx);
+      } else if (fadeSrcState === STATE.LEVEL_SELECT) {
+        drawLevelSelectScreen(ctx);
+      } else if (fadeSrcState === STATE.GAMEOVER) {
+        drawGameOver(ctx);
+      } else if (grid) {
+        drawSky(ctx);
+        const startCol = Math.max(0, Math.floor(cameraX / TILE) - 1);
+        const endCol   = Math.min(LEVEL_COLS - 1, Math.floor((cameraX + LOGICAL_W) / TILE) + 2);
+        for (let r = 0; r < LEVEL_ROWS; r++) {
+          for (let c = startCol; c <= endCol; c++) {
+            const tile = grid[r][c];
+            if (tile !== '.') drawTile(ctx, tile, c, r);
+          }
         }
+        for (const item of items) {
+          if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
+          if (item.type === 'mushroom')        drawMushroom(ctx, item);
+          else if (item.type === 'fireflower') drawFireFlower(ctx, item);
+          else if (item.type === 'star')       drawStar(ctx, item);
+          else if (item.type === 'coinpopup')  drawCoinPopup(ctx, item);
+        }
+        for (const fb of fireballs) { if (fb.active) drawFireball(ctx, fb); }
+        for (const enemy of enemies) {
+          if (!enemy.active || enemy.state === 'dead') continue;
+          if (enemy.x + enemy.w < cameraX || enemy.x > cameraX + LOGICAL_W) continue;
+          if (enemy.type === 'goomba')     drawGoomba(ctx, enemy);
+          else if (enemy.type === 'koopa') drawKoopa(ctx, enemy);
+        }
+        drawPiranha(ctx);
+        if (mario) drawMario(ctx);
+        drawHUD(ctx);
+        if (fadeSrcState === STATE.WIN) drawWinScreen(ctx);
       }
-      if (mario) drawMario(ctx);
-      drawHUD(ctx);
     } else {
-      // Fade-in: show destination (black background is fine — overlay fades away)
+      // Fade-in: show destination screen emerging from black
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       if (fadeDoneState === STATE.LEVEL_SELECT) drawLevelSelectScreen(ctx);
-      else if (fadeDoneState === STATE.INTRO) drawIntroScreen(ctx);
-      else if (fadeDoneState === STATE.TITLE) drawTitleScreen(ctx);
+      else if (fadeDoneState === STATE.INTRO)   drawIntroScreen(ctx);
+      else if (fadeDoneState === STATE.TITLE)   drawTitleScreen(ctx);
     }
     drawFadeOverlay(ctx);
     return;

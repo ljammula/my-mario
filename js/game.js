@@ -4,6 +4,7 @@
 
 // Kick off a fade-out → callback → fade-in → doneState sequence
 function startFade(callback, doneState) {
+  fadeSrcState  = gameState;
   fadeAlpha     = 0;
   fadeDir       = 1;
   fadeCallback  = callback;
