@@ -24,6 +24,13 @@ let fireballCooldown = 0;
 let pipeTransitionLock = 0;
 let piranha        = null;
 
+// Fade transition state
+let fadeAlpha     = 0;     // 0=transparent, 1=black
+let fadeDir       = 1;     // 1=fade-out (darken), -1=fade-in (brighten)
+let fadeCallback  = null;  // called once fully black (prepares next scene)
+let fadeDoneState = null;  // gameState to enter after fade-in completes
+let selectedLevel = 1;
+
 // --------------- Entity factories ---------------
 
 function createMario(powerState = null) {

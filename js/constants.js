@@ -62,11 +62,13 @@ const SOLID_TILES = new Set(['G','B','M','Q','U','H','PT','PR','PL','PB','CA','C
 
 // Game states
 const STATE = {
-  TITLE:    'TITLE',
-  INTRO:    'INTRO',
-  PLAYING:  'PLAYING',
-  PAUSED:   'PAUSED',
-  DEATH:    'DEATH',
-  WIN:      'WIN',
-  GAMEOVER: 'GAMEOVER',
+  TITLE:        'TITLE',
+  LEVEL_SELECT: 'LEVEL_SELECT',
+  INTRO:        'INTRO',
+  PLAYING:      'PLAYING',
+  PAUSED:       'PAUSED',
+  DEATH:        'DEATH',
+  WIN:          'WIN',
+  GAMEOVER:     'GAMEOVER',
+  FADE:         'FADE',
 };

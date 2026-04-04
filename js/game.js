@@ -2,6 +2,16 @@
 // GAME — state machine + main loop
 // ============================================================
 
+// Kick off a fade-out → callback → fade-in → doneState sequence
+function startFade(callback, doneState) {
+  fadeAlpha     = 0;
+  fadeDir       = 1;
+  fadeCallback  = callback;
+  fadeDoneState = doneState;
+  gameState     = STATE.FADE;
+  AudioSystem.stopMusic();
+}
+
 function update() {
   blinkTimer++;
   updateInputRepeat();
@@ -9,26 +19,54 @@ function update() {
   switch(gameState) {
     case STATE.TITLE:
       if (isPressed(['Enter'])) {
-        AudioSystem.init();   // unlock AudioContext during user gesture
-        gameState  = STATE.INTRO;
-        stateTimer = 3 * 60;
-        resetLevel(false);
+        AudioSystem.init();
+        startFade(() => { selectedLevel = 1; }, STATE.LEVEL_SELECT);
       }
       break;
 
+    case STATE.LEVEL_SELECT:
+      if (isPressed(['ArrowLeft', 'ArrowRight'])) AudioSystem.init();
+      if (isPressed(['ArrowLeft']))  selectedLevel = selectedLevel > 1 ? selectedLevel - 1 : 5;
+      if (isPressed(['ArrowRight'])) selectedLevel = selectedLevel < 5 ? selectedLevel + 1 : 1;
+      if (isPressed(['Enter'])) {
+        AudioSystem.init();
+        currentLevel = selectedLevel;
+        startFade(() => {
+          resetLevel(false);
+          stateTimer   = 3 * 60;
+          musicStarted = false;
+        }, STATE.INTRO);
+      }
+      break;
+
+    case STATE.FADE: {
+      const FADE_SPEED = 1 / 20; // 20 frames per direction (0.33 sec each)
+      fadeAlpha += fadeDir * FADE_SPEED;
+      if (fadeDir === 1 && fadeAlpha >= 1) {
+        fadeAlpha = 1;
+        if (fadeCallback) { fadeCallback(); fadeCallback = null; }
+        fadeDir = -1;
+      } else if (fadeDir === -1 && fadeAlpha <= 0) {
+        fadeAlpha = 0;
+        fadeDir   = 1;
+        gameState = fadeDoneState || STATE.TITLE;
+        fadeDoneState = null;
+      }
+      break;
+    }
+
     case STATE.INTRO:
-      stateTimer--;
-      if (stateTimer <= 0) {
-        gameState = STATE.PLAYING;
+      if (!musicStarted) {
         AudioSystem.init();
         AudioSystem.playMusic(getMusicTrack());
         musicStarted = true;
       }
+      stateTimer--;
+      if (stateTimer <= 0) {
+        gameState = STATE.PLAYING;
+      }
       if (isPressed(['Enter'])) {
         gameState = STATE.PLAYING;
-        AudioSystem.init();
-        AudioSystem.playMusic(getMusicTrack());
-        musicStarted = true;
       }
       break;
 
@@ -63,14 +101,16 @@ function update() {
       if (stateTimer <= 0) {
         lives--;
         if (lives <= 0) {
-          gameState    = STATE.GAMEOVER;
-          stateTimer   = 5 * 60;
-          musicStarted = false;
+          startFade(() => {
+            stateTimer   = 5 * 60;
+            musicStarted = false;
+          }, STATE.GAMEOVER);
         } else {
-          gameState    = STATE.INTRO;
-          stateTimer   = 3 * 60;
-          resetLevel(true);
-          musicStarted = false;
+          startFade(() => {
+            resetLevel(true);
+            stateTimer   = 3 * 60;
+            musicStarted = false;
+          }, STATE.INTRO);
         }
       }
       break;
@@ -78,22 +118,24 @@ function update() {
     case STATE.WIN:
       stateTimer--;
       if (stateTimer <= 0) {
-        currentLevel = (currentLevel % 5) + 1;
-        gameState    = STATE.INTRO;
-        stateTimer   = 3 * 60;
-        resetLevel(true);
-        musicStarted = false;
+        startFade(() => {
+          currentLevel = (currentLevel % 5) + 1;
+          resetLevel(true);
+          stateTimer   = 3 * 60;
+          musicStarted = false;
+        }, STATE.INTRO);
       }
       break;
 
     case STATE.GAMEOVER:
       stateTimer--;
       if (stateTimer <= 0) {
-        gameState    = STATE.TITLE;
-        score        = 0;
-        coins        = 0;
-        lives        = 3;
-        musicStarted = false;
+        startFade(() => {
+          score        = 0;
+          coins        = 0;
+          lives        = 3;
+          musicStarted = false;
+        }, STATE.TITLE);
       }
       break;
   }
