@@ -286,6 +286,40 @@ assert.strictEqual(piranhaChecks.nearState, 'hidden', 'Expected piranha to stay 
 assert.strictEqual(piranhaChecks.farState, 'rising', 'Expected piranha to rise when Mario is far');
 assert.strictEqual(piranhaChecks.damageCalls, 1, 'Expected piranha contact to damage Mario');
 
+const koopaTopStompChecks = run(
+  ctx,
+  `(() => {
+    const damageBefore = damageCalls;
+    mario = createMario();
+    mario.x = 100;
+    mario.y = 175.5;
+    mario.vy = 2;
+    mario.w = 12;
+    mario.h = 16;
+    mario.form = 'super';
+
+    const k = createEnemyKoopa(6, 13, { speed: 0 });
+    k.x = 100;
+    k.y = 176;
+    k.w = 14;
+    k.h = 24;
+    k.vx = 0;
+    k.state = 'walk';
+
+    checkEnemyMarioCollision(k);
+    return {
+      koopaState: k.state,
+      marioVy: mario.vy,
+      damageDelta: damageCalls - damageBefore,
+      marioForm: mario.form,
+    };
+  })()`
+);
+assert.strictEqual(koopaTopStompChecks.koopaState, 'shell', 'Expected top-down Koopa contact to convert Koopa to shell');
+assert(koopaTopStompChecks.marioVy < 0, 'Expected stomp bounce (negative vy) after top-down Koopa contact');
+assert.strictEqual(koopaTopStompChecks.damageDelta, 0, 'Expected no Mario damage when stomping Koopa from above');
+assert.strictEqual(koopaTopStompChecks.marioForm, 'super', 'Expected Koopa stomp not to downgrade Mario form');
+
 const lateWorldSpawnSafety = run(
   ctx,
   `(() => {

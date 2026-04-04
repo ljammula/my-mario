@@ -136,8 +136,9 @@ function checkEnemyMarioCollision(enemy) {
   // Stomp check: mario falling, feet in top portion of enemy
   const marioFeet = mario.y + mario.h;
   const hOverlap  = Math.min(mario.x + mario.w, enemy.x + enemy.w) - Math.max(mario.x, enemy.x);
+  const stompDepth = enemy.type === 'koopa' ? 0.85 : 0.6;
 
-  if (mario.vy > 0 && marioFeet > enemy.y + 1 && marioFeet < enemy.y + enemy.h * 0.6 && hOverlap > 1) {
+  if (mario.vy > 0 && marioFeet > enemy.y + 1 && marioFeet < enemy.y + enemy.h * stompDepth && hOverlap > 1) {
     mario.vy       = -5;
     mario.grounded = false;
     if (enemy.type === 'goomba') {
