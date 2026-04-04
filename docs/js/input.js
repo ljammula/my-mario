@@ -71,7 +71,7 @@ function resizeCanvas() {
   const canvas = document.getElementById('gameCanvas');
   if (!canvas) return;
   const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-  const controlsH = isTouchDevice ? 160 : 0;
+  const controlsH = isTouchDevice ? 120 : 0;
   const availW = window.innerWidth;
   const availH = window.innerHeight - controlsH;
   const scale  = Math.min(availW / CANVAS_W, availH / CANVAS_H);
