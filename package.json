@@ -4,7 +4,8 @@
   "description": "Super Mario Bros World 1-1 — vanilla JS + HTML5 Canvas",
   "private": true,
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "playthrough": "node scripts/headless-playthrough.js"
   },
   "devDependencies": {
     "playwright": "^1.58.2"
