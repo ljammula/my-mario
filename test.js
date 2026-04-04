@@ -373,7 +373,10 @@ const lateWorldSpawnSafety = run(
       currentLevel = level;
       resetLevel(false);
       gameState = STATE.PLAYING;
-      updateEnemies();
+      for (let i = 0; i < 120; i++) {
+        updateEnemies();
+        if (mario.dead) break;
+      }
       results.push({
         level,
         dead: mario.dead,
@@ -386,7 +389,7 @@ const lateWorldSpawnSafety = run(
 for (const result of lateWorldSpawnSafety) {
   assert(
     !result.dead,
-    'Expected no instant death on level start in late worlds (6-10), but Mario died in level ' + result.level
+    'Expected no start-of-level death window in late worlds (6-10), but Mario died in level ' + result.level
   );
 }
 

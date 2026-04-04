@@ -423,16 +423,9 @@ function configurePiranha() {
 function enforceLateWorldSpawnSafety() {
   if (currentArea !== 'main' || currentLevel < 6 || currentLevel > 10 || !mario) return;
 
-  const safeRightX = mario.x + mario.w + TILE;
-  const topY = mario.y - 1;
-  const bottomY = mario.y + mario.h;
-
-  enemies = enemies.filter(enemy => {
-    const projectedY = enemy.y + Math.max(0, enemy.vy) + GRAVITY;
-    const horizontalRisk = enemy.x < safeRightX;
-    const verticalRisk = projectedY + enemy.h > topY && projectedY < bottomY;
-    return !(horizontalRisk && verticalRisk);
-  });
+  const startSafeDistance = TILE * 10;
+  const safeRightX = mario.x + mario.w + startSafeDistance;
+  enemies = enemies.filter(enemy => enemy.x >= safeRightX);
 }
 
 function applyCurrentAreaData() {
