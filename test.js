@@ -75,6 +75,8 @@ const sourceLevel = read('js/level.js');
 const sourceState = read('js/state.js');
 const sourceGame = read('js/game.js');
 const sourceEnemies = read('js/enemies.js');
+const sourceMario = read('js/mario.js');
+const sourceItems = read('js/items.js');
 
 assert(sourceLevel.includes('function buildLevel3Main()'), 'Expected buildLevel3Main() in js/level.js');
 assert(sourceLevel.includes('function buildLevel3Hidden()'), 'Expected buildLevel3Hidden() in js/level.js');
@@ -83,6 +85,9 @@ assert(sourceGame.includes('currentLevel = (currentLevel % MAX_LEVEL) + 1'), 'Ex
 assert(sourceGame.includes('resetLevel(true);'), 'Expected respawn/advance to preserve power state');
 assert(sourceGame.includes('resetLevel(false);'), 'Expected fresh start paths to reset power state');
 assert(sourceEnemies.includes('piranha.pipeX'), 'Expected dynamic piranha pipe targeting in js/enemies.js');
+assert(sourceMario.includes("content === 'flower' || content === 'bomb'"), 'Expected explicit bomb/flower block handling in js/mario.js');
+assert(sourceItems.includes("item.type === 'fireflower' || item.type === 'bomb'"), 'Expected bomb pickup to use fire-power collect path in js/items.js');
+assert(sourceRender.includes("const overallsColor = form === 'fire'"), 'Expected fire-form Mario palette override in js/render.js');
 
 for (const label of ['CONTROLS', '\\u2190/\\u2192  MOVE', 'SPACE/Z  JUMP', 'ENTER  START/PAUSE']) {
   assert(sourceRender.includes(label), `Expected controls label "${label}" in js/render.js`);
@@ -319,6 +324,46 @@ assert.strictEqual(koopaTopStompChecks.koopaState, 'shell', 'Expected top-down K
 assert(koopaTopStompChecks.marioVy < 0, 'Expected stomp bounce (negative vy) after top-down Koopa contact');
 assert.strictEqual(koopaTopStompChecks.damageDelta, 0, 'Expected no Mario damage when stomping Koopa from above');
 assert.strictEqual(koopaTopStompChecks.marioForm, 'super', 'Expected Koopa stomp not to downgrade Mario form');
+
+const ctxBomb = createContext();
+loadScripts(ctxBomb, ['js/constants.js', 'js/level.js', 'js/state.js', 'js/tiles.js', 'js/collision.js', 'js/mario.js', 'js/items.js']);
+const bombPowerChecks = run(
+  ctxBomb,
+  `(() => {
+    grid = Array.from({ length: LEVEL_ROWS }, () => new Array(LEVEL_COLS).fill('.'));
+    items = [];
+    mario = createMario();
+    mario.form = 'super';
+    mario.h = 24;
+    mario.y = 184;
+
+    grid[5][5] = 'Q';
+    currentQContents = { '5,5': 'mushroom' };
+    handleHeadBonk(5, 5);
+    const mushroomDropType = items[0]?.type || null;
+
+    items = [];
+    grid[5][5] = 'Q';
+    currentQContents = { '5,5': 'bomb' };
+    handleHeadBonk(5, 5);
+    const bombDropType = items[0]?.type || null;
+
+    mario.form = 'super';
+    mario.h = 24;
+    mario.y = 184;
+    collectItem({ type: 'bomb' });
+    return {
+      mushroomDropType,
+      bombDropType,
+      formAfterBombCollect: mario.form,
+      heightAfterBombCollect: mario.h,
+    };
+  })()`
+);
+assert.strictEqual(bombPowerChecks.mushroomDropType, 'mushroom', 'Expected mushroom blocks to stay mushroom drops (no implicit bomb/fire conversion)');
+assert.strictEqual(bombPowerChecks.bombDropType, 'bomb', 'Expected bomb-designated blocks to drop bomb power item');
+assert.strictEqual(bombPowerChecks.formAfterBombCollect, 'fire', 'Expected bomb pickup to grant fire/bomb power form');
+assert.strictEqual(bombPowerChecks.heightAfterBombCollect, 24, 'Expected bomb pickup to keep Mario in tall form');
 
 const lateWorldSpawnSafety = run(
   ctx,

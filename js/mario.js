@@ -21,7 +21,17 @@ function handleHeadBonk(col, row) {
         vy: -2,
         timer: 30,
       });
-    } else if (content === 'mushroom' || content === 'flower') {
+    } else if (content === 'mushroom') {
+      items.push({
+        type: 'mushroom',
+        x: col * TILE,
+        y: (row - 1) * TILE,
+        vx: 1.5, vy: 0,
+        w: 14, h: 14,
+        grounded: false,
+      });
+      AudioSystem.playSFX('bump');
+    } else if (content === 'flower' || content === 'bomb') {
       if (mario.form === 'small') {
         items.push({
           type: 'mushroom',
@@ -33,7 +43,7 @@ function handleHeadBonk(col, row) {
         });
       } else {
         items.push({
-          type: 'fireflower',
+          type: 'bomb',
           x: col * TILE + 1,
           y: (row - 1) * TILE,
           vx: 0, vy: 0,

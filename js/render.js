@@ -192,8 +192,11 @@ function drawMario(ctx) {
 
 function drawMarioShape(ctx, x, y, w, h, form, frame) {
   const s = SCALE;
+  const hatColor = form === 'fire' ? '#E52421' : '#CC0000';
+  const shirtColor = form === 'fire' ? '#B31217' : '#CC0000';
+  const overallsColor = form === 'fire' ? '#E53935' : '#0000CC';
   // Hat
-  ctx.fillStyle = '#CC0000';
+  ctx.fillStyle = hatColor;
   ctx.fillRect(x + 2*s, y, 8*s, 3*s);
   ctx.fillRect(x, y + 3*s, 10*s, 2*s);
   // Face
@@ -206,7 +209,7 @@ function drawMarioShape(ctx, x, y, w, h, form, frame) {
   ctx.fillStyle = '#5C3317';
   ctx.fillRect(x + 3*s, y + 7*s, 7*s, 2*s);
   // Overalls
-  ctx.fillStyle = '#0000CC';
+  ctx.fillStyle = overallsColor;
   if (form === 'small') {
     ctx.fillRect(x + 1*s, y + 9*s, 9*s, 4*s);
     ctx.fillRect(x + 3*s, y + 9*s, 5*s, 2*s);
@@ -215,7 +218,7 @@ function drawMarioShape(ctx, x, y, w, h, form, frame) {
     ctx.fillRect(x + 3*s, y + 9*s, 5*s, 3*s);
   }
   // Shirt
-  ctx.fillStyle = '#CC0000';
+  ctx.fillStyle = shirtColor;
   if (form === 'small') {
     ctx.fillRect(x,        y + 9*s, 3*s, 4*s);
     ctx.fillRect(x + 9*s,  y + 9*s, 2*s, 4*s);
@@ -672,7 +675,7 @@ function render(ctx) {
         for (const item of items) {
           if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
           if (item.type === 'mushroom')        drawMushroom(ctx, item);
-          else if (item.type === 'fireflower') drawFireFlower(ctx, item);
+          else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
           else if (item.type === 'star')       drawStar(ctx, item);
           else if (item.type === 'coinpopup')  drawCoinPopup(ctx, item);
         }
@@ -726,7 +729,7 @@ function render(ctx) {
   for (const item of items) {
     if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
     if (item.type === 'mushroom')   drawMushroom(ctx, item);
-    else if (item.type === 'fireflower') drawFireFlower(ctx, item);
+    else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
     else if (item.type === 'star')  drawStar(ctx, item);
     else if (item.type === 'coinpopup') drawCoinPopup(ctx, item);
   }
