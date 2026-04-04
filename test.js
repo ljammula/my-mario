@@ -286,6 +286,31 @@ assert.strictEqual(piranhaChecks.nearState, 'hidden', 'Expected piranha to stay 
 assert.strictEqual(piranhaChecks.farState, 'rising', 'Expected piranha to rise when Mario is far');
 assert.strictEqual(piranhaChecks.damageCalls, 1, 'Expected piranha contact to damage Mario');
 
+const lateWorldSpawnSafety = run(
+  ctx,
+  `(() => {
+    const results = [];
+    for (let level = 6; level <= 10; level++) {
+      currentLevel = level;
+      resetLevel(false);
+      gameState = STATE.PLAYING;
+      updateEnemies();
+      results.push({
+        level,
+        dead: mario.dead,
+        form: mario.form,
+      });
+    }
+    return results;
+  })()`
+);
+for (const result of lateWorldSpawnSafety) {
+  assert(
+    !result.dead,
+    'Expected no instant death on level start in late worlds (6-10), but Mario died in level ' + result.level
+  );
+}
+
 // ============================================================
 // SECTION 4: Camera tracking tests
 // ============================================================
