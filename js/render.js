@@ -495,10 +495,12 @@ function drawControlsHelpOverlay(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  if (currentArea === 'hidden' || currentLevel === 2) {
+  if (currentArea === 'hidden' || currentLevel === 2 || currentLevel === 5) {
     ctx.fillStyle = '#000000';
   } else if (currentLevel === 3) {
     ctx.fillStyle = '#79B8FF';
+  } else if (currentLevel === 4) {
+    ctx.fillStyle = '#E8A040'; // dusk/forest orange
   } else {
     ctx.fillStyle = '#5C94FC';
   }
@@ -519,7 +521,59 @@ function drawTitleScreen(ctx) {
   }
   ctx.font = '10px monospace';
   ctx.fillStyle = '#888888';
-  ctx.fillText('WORLD 1-1', CANVAS_W/2, CANVAS_H/2 + 80);
+  ctx.fillText('WORLDS 1-1 TO 1-5', CANVAS_W/2, CANVAS_H/2 + 80);
+}
+
+function drawLevelSelectScreen(ctx) {
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 22px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SELECT WORLD', CANVAS_W/2, 80);
+
+  const themes = ['OVERWORLD','UNDERGROUND','ATHLETIC','FOREST','CASTLE'];
+  const boxW = 72, boxH = 56, gap = 14;
+  const totalW = 5 * boxW + 4 * gap;
+  const startX = (CANVAS_W - totalW) / 2;
+  const boxY   = CANVAS_H / 2 - boxH / 2;
+
+  for (let i = 0; i < 5; i++) {
+    const level = i + 1;
+    const bx = startX + i * (boxW + gap);
+
+    const isSelected = level === selectedLevel;
+    ctx.fillStyle = isSelected ? '#FFD700' : '#333333';
+    ctx.strokeStyle = isSelected ? '#FFFFFF' : '#666666';
+    ctx.lineWidth = isSelected ? 3 : 1;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(bx, boxY, boxW, boxH, 6) : ctx.rect(bx, boxY, boxW, boxH);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = isSelected ? '#000000' : '#AAAAAA';
+    ctx.font = `bold 16px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('1-' + level, bx + boxW/2, boxY + 18);
+    ctx.font = '9px monospace';
+    ctx.fillText(themes[i], bx + boxW/2, boxY + 36);
+  }
+
+  // Arrow hint
+  if (Math.floor(blinkTimer / 25) % 2 === 0) {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('\u2190 \u2192  CHOOSE    ENTER = PLAY', CANVAS_W/2, CANVAS_H/2 + 70);
+  }
+}
+
+function drawFadeOverlay(ctx) {
+  if (fadeAlpha <= 0) return;
+  ctx.fillStyle = `rgba(0,0,0,${fadeAlpha.toFixed(3)})`;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 
 function drawIntroScreen(ctx) {
@@ -574,14 +628,49 @@ function render(ctx) {
 
   if (gameState === STATE.TITLE) {
     drawTitleScreen(ctx);
+    drawFadeOverlay(ctx);
+    return;
+  }
+  if (gameState === STATE.LEVEL_SELECT) {
+    drawLevelSelectScreen(ctx);
+    drawFadeOverlay(ctx);
+    return;
+  }
+  if (gameState === STATE.FADE) {
+    // Show the most recently rendered game scene behind the overlay.
+    // Fading out (fadeDir=1): game world is visible and darkening.
+    // Fading in (fadeDir=-1): destination black screen brightening.
+    if (fadeDir === 1 && grid) {
+      drawSky(ctx);
+      const startCol = Math.max(0, Math.floor(cameraX / TILE) - 1);
+      const endCol   = Math.min(LEVEL_COLS - 1, Math.floor((cameraX + LOGICAL_W) / TILE) + 2);
+      for (let r = 0; r < LEVEL_ROWS; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          const tile = grid[r][c];
+          if (tile !== '.') drawTile(ctx, tile, c, r);
+        }
+      }
+      if (mario) drawMario(ctx);
+      drawHUD(ctx);
+    } else {
+      // Fade-in: show destination (black background is fine — overlay fades away)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      if (fadeDoneState === STATE.LEVEL_SELECT) drawLevelSelectScreen(ctx);
+      else if (fadeDoneState === STATE.INTRO) drawIntroScreen(ctx);
+      else if (fadeDoneState === STATE.TITLE) drawTitleScreen(ctx);
+    }
+    drawFadeOverlay(ctx);
     return;
   }
   if (gameState === STATE.INTRO) {
     drawIntroScreen(ctx);
+    drawFadeOverlay(ctx);
     return;
   }
   if (gameState === STATE.GAMEOVER) {
     drawGameOver(ctx);
+    drawFadeOverlay(ctx);
     return;
   }
 
@@ -626,4 +715,5 @@ function render(ctx) {
 
   if (gameState === STATE.PAUSED) drawPausedOverlay(ctx);
   if (gameState === STATE.WIN)    drawWinScreen(ctx);
+  drawFadeOverlay(ctx);
 }

@@ -79,7 +79,7 @@ const sourceEnemies = read('js/enemies.js');
 assert(sourceLevel.includes('function buildLevel3Main()'), 'Expected buildLevel3Main() in js/level.js');
 assert(sourceLevel.includes('function buildLevel3Hidden()'), 'Expected buildLevel3Hidden() in js/level.js');
 assert(sourceState.includes('enterLevel3HiddenArea'), 'Expected hidden-area transition helpers in js/state.js');
-assert(sourceGame.includes('currentLevel = (currentLevel % 3) + 1'), 'Expected 3-level rotation in js/game.js');
+assert(sourceGame.includes('currentLevel = (currentLevel % 5) + 1'), 'Expected 5-level rotation in js/game.js');
 assert(sourceGame.includes('resetLevel(true);'), 'Expected respawn/advance to preserve power state');
 assert(sourceGame.includes('resetLevel(false);'), 'Expected fresh start paths to reset power state');
 assert(sourceEnemies.includes('piranha.pipeX'), 'Expected dynamic piranha pipe targeting in js/enemies.js');

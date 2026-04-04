@@ -24,6 +24,13 @@ let fireballCooldown = 0;
 let pipeTransitionLock = 0;
 let piranha        = null;
 
+// Fade transition state
+let fadeAlpha     = 0;     // 0=transparent, 1=black
+let fadeDir       = 1;     // 1=fade-out (darken), -1=fade-in (brighten)
+let fadeCallback  = null;  // called once fully black (prepares next scene)
+let fadeDoneState = null;  // gameState to enter after fade-in completes
+let selectedLevel = 1;
+
 // --------------- Entity factories ---------------
 
 function createMario(powerState = null) {
@@ -94,6 +101,12 @@ function getLevelAreaData() {
   if (currentLevel === 2) {
     return { grid: buildLevel2(), qContents: Q_CONTENTS_L2 };
   }
+  if (currentLevel === 4) {
+    return { grid: buildLevel4(), qContents: Q_CONTENTS_L4 };
+  }
+  if (currentLevel === 5) {
+    return { grid: buildLevel5(), qContents: Q_CONTENTS_L5 };
+  }
   if (currentArea === 'hidden') {
     return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
   }
@@ -101,7 +114,7 @@ function getLevelAreaData() {
 }
 
 function getMusicTrack() {
-  return (currentLevel === 2 || currentArea === 'hidden') ? 'underground' : 'overworld';
+  return (currentLevel === 2 || currentLevel === 5 || currentArea === 'hidden') ? 'underground' : 'overworld';
 }
 
 function spawnEnemies() {
@@ -131,6 +144,36 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(44, 12));
     enemies.push(createEnemyKoopa(100, 12));
     enemies.push(createEnemyKoopa(145, 12));
+    return;
+  }
+
+  if (currentLevel === 4) {
+    const goombas = [
+      [18,13],[20,13],[35,13],[37,13],[68,13],[70,13],
+      [96,13],[98,13],[128,13],[130,13],[158,13],[160,13],
+      [170,13],[172,13],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(47, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(80, 9, { edgeAware: true, speed: 1.2 }));
+    enemies.push(createEnemyKoopa(112, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(145, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(183, 13, { speed: 1.3 }));
+    return;
+  }
+
+  if (currentLevel === 5) {
+    const goombas = [
+      [15,12],[17,12],[35,12],[37,12],[58,12],[60,12],
+      [72,12],[74,12],[110,12],[112,12],[135,12],[137,12],
+      [162,12],[164,12],[178,12],[180,12],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r, { speed: 1.3 }));
+    enemies.push(createEnemyKoopa(25, 8, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(42, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(90, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(150, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(172, 8, { edgeAware: true, speed: 1.4 }));
     return;
   }
 
@@ -191,6 +234,21 @@ function configurePiranha() {
       baseY:   10 * TILE,
       targetY:  8 * TILE,
       pipeX: 75 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 4) {
+    piranha = {
+      x: 55 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 55 * TILE + 8,
     };
     return;
   }
