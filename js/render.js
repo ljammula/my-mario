@@ -495,7 +495,8 @@ function drawControlsHelpOverlay(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  if (currentArea === 'hidden' || currentLevel === 2 || currentLevel === 5) {
+  const darkLevels = [2, 5, 7, 10];
+  if (currentArea === 'hidden' || darkLevels.includes(currentLevel)) {
     ctx.fillStyle = '#000000';
   } else if (currentLevel === 3) {
     ctx.fillStyle = '#79B8FF';

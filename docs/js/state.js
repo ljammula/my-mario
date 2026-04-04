@@ -111,6 +111,9 @@ function getLevelAreaData() {
   if (currentLevel === 6) {
     return { grid: buildLevel6(), qContents: Q_CONTENTS_L6 };
   }
+  if (currentLevel === 7) {
+    return { grid: buildLevel7(), qContents: Q_CONTENTS_L7 };
+  }
   if (currentArea === 'hidden') {
     return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
   }
@@ -118,7 +121,8 @@ function getLevelAreaData() {
 }
 
 function getMusicTrack() {
-  return (currentLevel === 2 || currentLevel === 5 || currentArea === 'hidden') ? 'underground' : 'overworld';
+  const underground = [2, 5, 7, 10];
+  return (underground.includes(currentLevel) || currentArea === 'hidden') ? 'underground' : 'overworld';
 }
 
 function spawnEnemies() {
@@ -148,6 +152,21 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(44, 12));
     enemies.push(createEnemyKoopa(100, 12));
     enemies.push(createEnemyKoopa(145, 12));
+    return;
+  }
+
+  if (currentLevel === 7) {
+    const goombas = [
+      [3,12],[14,12],[16,12],[26,10],[28,10],[40,8],[44,8],
+      [55,12],[57,12],[69,10],[84,8],[99,12],[114,10],[129,8],[144,12],[160,10],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(12,12,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(30,10,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(42,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(58,12,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(86,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(162,10,{edgeAware:true,speed:1.3}));
     return;
   }
 

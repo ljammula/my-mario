@@ -871,3 +871,109 @@ function buildLevel6() {
   }
   return grid;
 }
+
+// ============================================================
+// WORLD 7 — "Shadow Dungeon" — Underground (zigzag platforms)
+// ============================================================
+
+const Q_CONTENTS_L7 = {
+  '18,11': 'coin',
+  '32,9':  'mushroom',
+  '48,7':  'coin',
+  '62,11': 'coin',
+  '76,9':  'star',
+  '92,7':  'coin',
+  '106,11':'mushroom',
+  '120,9': 'coin',
+  '136,7': 'coin',
+  '150,11':'star',
+  '165,9': 'mushroom',
+};
+
+function buildLevel7() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Full H ceiling (rows 0-1)
+  for (let c = 0; c < LEVEL_COLS; c++) { setTile(c,0,'H'); setTile(c,1,'H'); }
+
+  // Full G floor (rows 13-14)
+  for (let c = 0; c < LEVEL_COLS; c++) { setTile(c,13,'G'); setTile(c,14,'G'); }
+
+  // Zigzag platforms row 11→9→7→11→... with embedded Q-blocks
+  // Platform 1: row 11, cols 10-17, Q at col 18
+  for (let c=10;c<=17;c++) setTile(c,11,'H');
+  setTile(18,11,'Q');
+
+  // Platform 2: row 9, cols 24-31, Q at col 32
+  for (let c=24;c<=31;c++) setTile(c,9,'H');
+  setTile(32,9,'Q');
+
+  // Platform 3: row 7, cols 38-46, Q at col 48
+  for (let c=38;c<=46;c++) setTile(c,7,'H');
+  setTile(48,7,'Q');
+
+  // Platform 4: row 11, cols 53-60, Q at col 62
+  for (let c=53;c<=60;c++) setTile(c,11,'H');
+  setTile(62,11,'Q');
+
+  // Platform 5: row 9, cols 67-75, Q at col 76
+  for (let c=67;c<=75;c++) setTile(c,9,'H');
+  setTile(76,9,'Q');
+
+  // Platform 6: row 7, cols 82-90, Q at col 92
+  for (let c=82;c<=90;c++) setTile(c,7,'H');
+  setTile(92,7,'Q');
+
+  // Platform 7: row 11, cols 97-105, Q at col 106
+  for (let c=97;c<=105;c++) setTile(c,11,'H');
+  setTile(106,11,'Q');
+
+  // Platform 8: row 9, cols 112-119, Q at col 120
+  for (let c=112;c<=119;c++) setTile(c,9,'H');
+  setTile(120,9,'Q');
+
+  // Platform 9: row 7, cols 127-135, Q at col 136
+  for (let c=127;c<=135;c++) setTile(c,7,'H');
+  setTile(136,7,'Q');
+
+  // Platform 10: row 11, cols 142-150, Q at col 150
+  for (let c=142;c<=150;c++) setTile(c,11,'H');
+  setTile(150,11,'Q');
+
+  // Platform 11: row 9, cols 157-165, Q at col 165
+  for (let c=157;c<=165;c++) setTile(c,9,'H');
+  setTile(165,9,'Q');
+
+  // Short obstacle pipes (rows 12-13)
+  setTile(6,12,'PT');  setTile(7,12,'PR');
+  setTile(6,13,'PL');  setTile(7,13,'PB');
+
+  setTile(72,12,'PT'); setTile(73,12,'PR');
+  setTile(72,13,'PL'); setTile(73,13,'PB');
+
+  setTile(145,12,'PT'); setTile(146,12,'PR');
+  setTile(145,13,'PL'); setTile(146,13,'PB');
+
+  // Staircase + flagpole + castle
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r=12;r<=14;r++) setTile(199,r,'H');
+  for (let r=11;r<=14;r++) setTile(200,r,'H');
+  for (let r=10;r<=14;r++) setTile(201,r,'H');
+  for (let r= 9;r<=14;r++) setTile(202,r,'H');
+  for (let r= 8;r<=14;r++) setTile(203,r,'H');
+  for (let r= 7;r<=14;r++) setTile(204,r,'H');
+  for (let r= 6;r<=14;r++) setTile(205,r,'H');
+  for (let c=206;c<=209;c++) { setTile(c,13,'H'); setTile(c,14,'H'); }
+  setTile(210,4,'FF');
+  for (let r=5;r<=13;r++) setTile(210,r,'FP');
+  for (let c=212;c<=223;c+=2) setTile(c,8,'CA');
+  for (let r=9;r<=11;r++) for (let c=212;c<=223;c++) setTile(c,r,'CA');
+  for (let r=12;r<=13;r++) for (let c=212;c<=223;c++) {
+    if (c===216||c===217) setTile(c,r,'CD'); else setTile(c,r,'CA');
+  }
+  return grid;
+}
