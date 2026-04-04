@@ -21,7 +21,17 @@ function handleHeadBonk(col, row) {
         vy: -2,
         timer: 30,
       });
-    } else if (content === 'mushroom' || content === 'flower') {
+    } else if (content === 'mushroom') {
+      items.push({
+        type: 'mushroom',
+        x: col * TILE,
+        y: (row - 1) * TILE,
+        vx: 1.5, vy: 0,
+        w: 14, h: 14,
+        grounded: false,
+      });
+      AudioSystem.playSFX('bump');
+    } else if (content === 'flower' || content === 'bomb') {
       if (mario.form === 'small') {
         items.push({
           type: 'mushroom',
@@ -33,7 +43,7 @@ function handleHeadBonk(col, row) {
         });
       } else {
         items.push({
-          type: 'fireflower',
+          type: 'bomb',
           x: col * TILE + 1,
           y: (row - 1) * TILE,
           vx: 0, vy: 0,
@@ -106,21 +116,29 @@ function updateMario() {
   // Horizontal movement
   const accel  = run ? RUN_ACCELERATION : WALK_ACCELERATION;
   const maxSpd = run ? RUN_MAX_SPEED    : WALK_MAX_SPEED;
+  const reverseControl = mario.grounded ? SKID_DECELERATION : SKID_DECELERATION * 0.55;
+  const minStartSpeed = run ? 0.42 : 0.34;
 
   if (left && !right) {
     mario.facing = -1;
-    if (mario.vx > 0.5 && mario.grounded) {
-      mario.vx -= SKID_DECELERATION;
+    const turningFromRight = mario.vx > 0.12;
+    if (turningFromRight) {
+      mario.vx -= reverseControl;
+      if (mario.vx < 0 && mario.vx > -minStartSpeed) mario.vx = -minStartSpeed;
     } else {
       mario.vx -= accel;
+      if (mario.vx > -minStartSpeed) mario.vx = Math.min(mario.vx, -minStartSpeed);
     }
     if (mario.vx < -maxSpd) mario.vx = -maxSpd;
   } else if (right && !left) {
     mario.facing = 1;
-    if (mario.vx < -0.5 && mario.grounded) {
-      mario.vx += SKID_DECELERATION;
+    const turningFromLeft = mario.vx < -0.12;
+    if (turningFromLeft) {
+      mario.vx += reverseControl;
+      if (mario.vx > 0 && mario.vx < minStartSpeed) mario.vx = minStartSpeed;
     } else {
       mario.vx += accel;
+      if (mario.vx < minStartSpeed) mario.vx = Math.max(mario.vx, minStartSpeed);
     }
     if (mario.vx > maxSpd) mario.vx = maxSpd;
   } else {

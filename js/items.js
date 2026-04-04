@@ -108,7 +108,7 @@ function collectItem(item) {
       mario.h    = 24;
       mario.y   -= 8;
     }
-  } else if (item.type === 'fireflower') {
+  } else if (item.type === 'fireflower' || item.type === 'bomb') {
     score += 1000;
     if (mario.form !== 'fire') {
       const wasSmall = mario.form === 'small';

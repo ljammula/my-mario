@@ -24,6 +24,14 @@ let fireballCooldown = 0;
 let pipeTransitionLock = 0;
 let piranha        = null;
 
+// Fade transition state
+let fadeAlpha     = 0;     // 0=transparent, 1=black
+let fadeDir       = 1;     // 1=fade-out (darken), -1=fade-in (brighten)
+let fadeCallback  = null;  // called once fully black (prepares next scene)
+let fadeDoneState = null;  // gameState to enter after fade-in completes
+let fadeSrcState  = null;  // gameState we were in when fade started
+let selectedLevel = 1;
+
 // --------------- Entity factories ---------------
 
 function createMario(powerState = null) {
@@ -94,6 +102,27 @@ function getLevelAreaData() {
   if (currentLevel === 2) {
     return { grid: buildLevel2(), qContents: Q_CONTENTS_L2 };
   }
+  if (currentLevel === 4) {
+    return { grid: buildLevel4(), qContents: Q_CONTENTS_L4 };
+  }
+  if (currentLevel === 5) {
+    return { grid: buildLevel5(), qContents: Q_CONTENTS_L5 };
+  }
+  if (currentLevel === 6) {
+    return { grid: buildLevel6(), qContents: Q_CONTENTS_L6 };
+  }
+  if (currentLevel === 7) {
+    return { grid: buildLevel7(), qContents: Q_CONTENTS_L7 };
+  }
+  if (currentLevel === 8) {
+    return { grid: buildLevel8(), qContents: Q_CONTENTS_L8 };
+  }
+  if (currentLevel === 9) {
+    return { grid: buildLevel9(), qContents: Q_CONTENTS_L9 };
+  }
+  if (currentLevel === 10) {
+    return { grid: buildLevel10(), qContents: Q_CONTENTS_L10 };
+  }
   if (currentArea === 'hidden') {
     return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
   }
@@ -101,7 +130,8 @@ function getLevelAreaData() {
 }
 
 function getMusicTrack() {
-  return (currentLevel === 2 || currentArea === 'hidden') ? 'underground' : 'overworld';
+  const underground = [2, 5, 7, 10];
+  return (underground.includes(currentLevel) || currentArea === 'hidden') ? 'underground' : 'overworld';
 }
 
 function spawnEnemies() {
@@ -131,6 +161,123 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(44, 12));
     enemies.push(createEnemyKoopa(100, 12));
     enemies.push(createEnemyKoopa(145, 12));
+    return;
+  }
+
+  if (currentLevel === 10) {
+    const goombas = [
+      [3,12],[12,12],[18,12],[25,12],
+      [32,8],[42,8],[48,8],[55,8],
+      [63,8],[72,8],[80,10],[85,10],
+      [92,10],[99,10],[110,8],[115,8],
+      [128,12],[135,12],[160,12],[175,12],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.4}));
+    enemies.push(createEnemyKoopa(6,12,  {speed:1.4}));
+    enemies.push(createEnemyKoopa(19,10, {edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(33,8,  {edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(46,10, {edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(65,8,  {edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(82,12, {speed:1.4}));
+    enemies.push(createEnemyKoopa(112,8, {edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(120,12,{speed:1.4}));
+    enemies.push(createEnemyKoopa(145,10,{edgeAware:true,speed:1.4}));
+    enemies.push(createEnemyKoopa(172,12,{speed:1.4}));
+    return;
+  }
+
+  if (currentLevel === 9) {
+    const goombas = [
+      [2,12],[5,12],[10,12],[15,12],[20,12],[31,12],[33,12],
+      [43,12],[48,12],[53,12],[61,12],[67,12],[83,12],[88,12],
+      [93,12],[127,12],[140,12],[150,12],[160,12],[175,12],[180,12],[190,12],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(14,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(46,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(86,6, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(99,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(111,6,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(142,6,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(162,7,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(172,6,{edgeAware:true,speed:1.3}));
+    return;
+  }
+
+  if (currentLevel === 8) {
+    const goombas = [
+      [2,12],[7,12],[22,12],[28,12],[37,10],[46,12],
+      [60,9],[67,11],[79,9],[91,10],[112,9],[162,11],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(11,9, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(45,10,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(57,7, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(89,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(100,10,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(124,9,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(147,7,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(171,8,{edgeAware:true,speed:1.3}));
+    return;
+  }
+
+  if (currentLevel === 7) {
+    const goombas = [
+      [3,12],[14,12],[16,12],[26,10],[28,10],[40,8],[44,8],
+      [55,12],[57,12],[69,10],[84,8],[99,12],[114,10],[129,8],[144,12],[160,10],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(12,12,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(30,10,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(42,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(58,12,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(86,8, {edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(162,10,{edgeAware:true,speed:1.3}));
+    return;
+  }
+
+  if (currentLevel === 6) {
+    const goombas = [
+      [5,12],[8,12],[16,12],[42,9],[52,12],[57,12],
+      [82,12],[98,8],[103,8],[107,6],[125,9],[135,9],[160,12],[175,12],
+    ];
+    for (const [c,r] of goombas) enemies.push(createEnemyGoomba(c,r,{speed:1.3}));
+    enemies.push(createEnemyKoopa(44,9,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(45,9,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(132,9,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(136,9,{edgeAware:true,speed:1.3}));
+    enemies.push(createEnemyKoopa(190,12,{speed:1.4}));
+    enemies.push(createEnemyKoopa(193,12,{speed:1.4}));
+    return;
+  }
+
+  if (currentLevel === 4) {
+    const goombas = [
+      [18,13],[20,13],[35,13],[37,13],[68,13],[70,13],
+      [96,13],[98,13],[128,13],[130,13],[158,13],[160,13],
+      [170,13],[172,13],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(47, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(80, 9, { edgeAware: true, speed: 1.2 }));
+    enemies.push(createEnemyKoopa(112, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(145, 13, { speed: 1.2 }));
+    enemies.push(createEnemyKoopa(183, 13, { speed: 1.3 }));
+    return;
+  }
+
+  if (currentLevel === 5) {
+    const goombas = [
+      [15,12],[17,12],[35,12],[37,12],[58,12],[60,12],
+      [72,12],[74,12],[110,12],[112,12],[135,12],[137,12],
+      [162,12],[164,12],[178,12],[180,12],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r, { speed: 1.3 }));
+    enemies.push(createEnemyKoopa(25, 8, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(42, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(90, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(150, 6, { edgeAware: true, speed: 1.3 }));
+    enemies.push(createEnemyKoopa(165, 10, { edgeAware: true, speed: 1.4 }));
     return;
   }
 
@@ -195,7 +342,90 @@ function configurePiranha() {
     return;
   }
 
+  if (currentLevel === 10) {
+    piranha = {
+      x: 105 * TILE + 4,
+      y: 11 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   11 * TILE,
+      targetY:  9 * TILE,
+      pipeX: 105 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 9) {
+    piranha = {
+      x: 130 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 130 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 8) {
+    piranha = {
+      x: 50 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 50 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 6) {
+    piranha = {
+      x: 48 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 48 * TILE + 8,
+    };
+    return;
+  }
+
+  if (currentLevel === 4) {
+    piranha = {
+      x: 55 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 55 * TILE + 8,
+    };
+    return;
+  }
+
   piranha = null;
+}
+
+function enforceLateWorldSpawnSafety() {
+  if (currentArea !== 'main' || currentLevel < 6 || currentLevel > 10 || !mario) return;
+
+  const startSafeDistance = TILE * 10;
+  const safeRightX = mario.x + mario.w + startSafeDistance;
+  enemies = enemies.filter(enemy => enemy.x >= safeRightX);
 }
 
 function applyCurrentAreaData() {
@@ -203,6 +433,7 @@ function applyCurrentAreaData() {
   grid = levelData.grid;
   currentQContents = levelData.qContents;
   spawnEnemies();
+  enforceLateWorldSpawnSafety();
   configurePiranha();
 }
 
@@ -210,9 +441,6 @@ function switchLevel3Area(nextArea, spawnX, spawnY) {
   if (currentLevel !== 3) return;
   currentArea = nextArea;
   applyCurrentAreaData();
-  cameraX = Math.max(0, spawnX - LOGICAL_W * 0.4);
-  const maxCamera = LEVEL_COLS * TILE - LOGICAL_W;
-  if (cameraX > maxCamera) cameraX = maxCamera;
 
   mario.x = spawnX;
   mario.y = spawnY + (16 - mario.h);
@@ -225,6 +453,7 @@ function switchLevel3Area(nextArea, spawnX, spawnY) {
   items = [];
   fireballs = [];
   pipeTransitionLock = 45;
+  if (typeof snapCameraToMario === 'function') snapCameraToMario(false);
 
   AudioSystem.playMusic(getMusicTrack());
 }
@@ -252,6 +481,7 @@ function resetLevel(preservePower = false) {
   mario            = createMario(powerState);
   applyCurrentAreaData();
   cameraX          = 0;
+  if (typeof snapCameraToMario === 'function') snapCameraToMario(false);
   gameTimer        = 400 * 60;
   fireballCooldown = 0;
   pipeTransitionLock = 0;

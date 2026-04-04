@@ -192,8 +192,11 @@ function drawMario(ctx) {
 
 function drawMarioShape(ctx, x, y, w, h, form, frame) {
   const s = SCALE;
+  const hatColor = form === 'fire' ? '#E52421' : '#CC0000';
+  const shirtColor = form === 'fire' ? '#B31217' : '#CC0000';
+  const overallsColor = form === 'fire' ? '#E53935' : '#0000CC';
   // Hat
-  ctx.fillStyle = '#CC0000';
+  ctx.fillStyle = hatColor;
   ctx.fillRect(x + 2*s, y, 8*s, 3*s);
   ctx.fillRect(x, y + 3*s, 10*s, 2*s);
   // Face
@@ -206,7 +209,7 @@ function drawMarioShape(ctx, x, y, w, h, form, frame) {
   ctx.fillStyle = '#5C3317';
   ctx.fillRect(x + 3*s, y + 7*s, 7*s, 2*s);
   // Overalls
-  ctx.fillStyle = '#0000CC';
+  ctx.fillStyle = overallsColor;
   if (form === 'small') {
     ctx.fillRect(x + 1*s, y + 9*s, 9*s, 4*s);
     ctx.fillRect(x + 3*s, y + 9*s, 5*s, 2*s);
@@ -215,7 +218,7 @@ function drawMarioShape(ctx, x, y, w, h, form, frame) {
     ctx.fillRect(x + 3*s, y + 9*s, 5*s, 3*s);
   }
   // Shirt
-  ctx.fillStyle = '#CC0000';
+  ctx.fillStyle = shirtColor;
   if (form === 'small') {
     ctx.fillRect(x,        y + 9*s, 3*s, 4*s);
     ctx.fillRect(x + 9*s,  y + 9*s, 2*s, 4*s);
@@ -495,10 +498,19 @@ function drawControlsHelpOverlay(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  if (currentArea === 'hidden' || currentLevel === 2) {
+  const darkLevels = [2, 5, 7, 10];
+  if (currentArea === 'hidden' || darkLevels.includes(currentLevel)) {
     ctx.fillStyle = '#000000';
   } else if (currentLevel === 3) {
     ctx.fillStyle = '#79B8FF';
+  } else if (currentLevel === 4) {
+    ctx.fillStyle = '#E8A040'; // dusk/forest orange
+  } else if (currentLevel === 6) {
+    ctx.fillStyle = '#4A6080'; // storm coast slate-blue
+  } else if (currentLevel === 8) {
+    ctx.fillStyle = '#1A0B3C'; // volcanic deep purple
+  } else if (currentLevel === 9) {
+    ctx.fillStyle = '#8B6914'; // sky citadel golden-brown
   } else {
     ctx.fillStyle = '#5C94FC';
   }
@@ -519,7 +531,66 @@ function drawTitleScreen(ctx) {
   }
   ctx.font = '10px monospace';
   ctx.fillStyle = '#888888';
-  ctx.fillText('WORLD 1-1', CANVAS_W/2, CANVAS_H/2 + 80);
+  ctx.fillText('WORLDS 1-1 TO 1-5', CANVAS_W/2, CANVAS_H/2 + 80);
+}
+
+function drawLevelSelectScreen(ctx) {
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 20px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SELECT WORLD', CANVAS_W/2, 52);
+
+  const themes = [
+    'OVERWORLD','UNDERGROUND','ATHLETIC','FOREST','CASTLE',
+    'STORM','DUNGEON','VOLCANIC','CITADEL','FORTRESS',
+  ];
+  const cols = 5;
+  const boxW = 88, boxH = 52, gapX = 8, gapY = 10;
+  const totalW = cols * boxW + (cols - 1) * gapX;
+  const startX = (CANVAS_W - totalW) / 2;
+
+  for (let i = 0; i < MAX_LEVEL; i++) {
+    const level = i + 1;
+    const col   = i % cols;
+    const row   = Math.floor(i / cols);
+    const bx    = startX + col * (boxW + gapX);
+    const by    = 80 + row * (boxH + gapY);
+
+    const isSelected = level === selectedLevel;
+    ctx.fillStyle   = isSelected ? '#FFD700' : '#2A2A2A';
+    ctx.strokeStyle = isSelected ? '#FFFFFF'  : '#555555';
+    ctx.lineWidth   = isSelected ? 2 : 1;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 5);
+    else               ctx.rect(bx, by, boxW, boxH);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = isSelected ? '#000000' : '#CCCCCC';
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('1-' + level, bx + boxW/2, by + 16);
+    ctx.font = '9px monospace';
+    ctx.fillStyle = isSelected ? '#333333' : '#888888';
+    ctx.fillText(themes[i] || '', bx + boxW/2, by + 34);
+  }
+
+  if (Math.floor(blinkTimer / 25) % 2 === 0) {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\u2190 \u2192  CHOOSE    ENTER = PLAY', CANVAS_W/2, CANVAS_H - 30);
+  }
+}
+
+function drawFadeOverlay(ctx) {
+  if (fadeAlpha <= 0) return;
+  ctx.fillStyle = `rgba(0,0,0,${fadeAlpha.toFixed(3)})`;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 
 function drawIntroScreen(ctx) {
@@ -574,14 +645,71 @@ function render(ctx) {
 
   if (gameState === STATE.TITLE) {
     drawTitleScreen(ctx);
+    drawFadeOverlay(ctx);
+    return;
+  }
+  if (gameState === STATE.LEVEL_SELECT) {
+    drawLevelSelectScreen(ctx);
+    drawFadeOverlay(ctx);
+    return;
+  }
+  if (gameState === STATE.FADE) {
+    if (fadeDir === 1) {
+      // Fade-out: draw the source screen we're leaving
+      if (fadeSrcState === STATE.TITLE) {
+        drawTitleScreen(ctx);
+      } else if (fadeSrcState === STATE.LEVEL_SELECT) {
+        drawLevelSelectScreen(ctx);
+      } else if (fadeSrcState === STATE.GAMEOVER) {
+        drawGameOver(ctx);
+      } else if (grid) {
+        drawSky(ctx);
+        const startCol = Math.max(0, Math.floor(cameraX / TILE) - 1);
+        const endCol   = Math.min(LEVEL_COLS - 1, Math.floor((cameraX + LOGICAL_W) / TILE) + 2);
+        for (let r = 0; r < LEVEL_ROWS; r++) {
+          for (let c = startCol; c <= endCol; c++) {
+            const tile = grid[r][c];
+            if (tile !== '.') drawTile(ctx, tile, c, r);
+          }
+        }
+        for (const item of items) {
+          if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
+          if (item.type === 'mushroom')        drawMushroom(ctx, item);
+          else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
+          else if (item.type === 'star')       drawStar(ctx, item);
+          else if (item.type === 'coinpopup')  drawCoinPopup(ctx, item);
+        }
+        for (const fb of fireballs) { if (fb.active) drawFireball(ctx, fb); }
+        for (const enemy of enemies) {
+          if (!enemy.active || enemy.state === 'dead') continue;
+          if (enemy.x + enemy.w < cameraX || enemy.x > cameraX + LOGICAL_W) continue;
+          if (enemy.type === 'goomba')     drawGoomba(ctx, enemy);
+          else if (enemy.type === 'koopa') drawKoopa(ctx, enemy);
+        }
+        drawPiranha(ctx);
+        if (mario) drawMario(ctx);
+        drawHUD(ctx);
+        if (fadeSrcState === STATE.WIN) drawWinScreen(ctx);
+      }
+    } else {
+      // Fade-in: show destination screen emerging from black
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+      if (fadeDoneState === STATE.LEVEL_SELECT) drawLevelSelectScreen(ctx);
+      else if (fadeDoneState === STATE.INTRO)   drawIntroScreen(ctx);
+      else if (fadeDoneState === STATE.TITLE)   drawTitleScreen(ctx);
+    }
+    drawFadeOverlay(ctx);
     return;
   }
   if (gameState === STATE.INTRO) {
     drawIntroScreen(ctx);
+    drawFadeOverlay(ctx);
     return;
   }
   if (gameState === STATE.GAMEOVER) {
     drawGameOver(ctx);
+    drawFadeOverlay(ctx);
     return;
   }
 
@@ -601,7 +729,7 @@ function render(ctx) {
   for (const item of items) {
     if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
     if (item.type === 'mushroom')   drawMushroom(ctx, item);
-    else if (item.type === 'fireflower') drawFireFlower(ctx, item);
+    else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
     else if (item.type === 'star')  drawStar(ctx, item);
     else if (item.type === 'coinpopup') drawCoinPopup(ctx, item);
   }
@@ -626,4 +754,5 @@ function render(ctx) {
 
   if (gameState === STATE.PAUSED) drawPausedOverlay(ctx);
   if (gameState === STATE.WIN)    drawWinScreen(ctx);
+  drawFadeOverlay(ctx);
 }
