@@ -78,7 +78,7 @@ function update() {
     case STATE.WIN:
       stateTimer--;
       if (stateTimer <= 0) {
-        currentLevel = (currentLevel % 3) + 1;
+        currentLevel = (currentLevel % 5) + 1;
         gameState    = STATE.INTRO;
         stateTimer   = 3 * 60;
         resetLevel(true);

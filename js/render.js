@@ -495,10 +495,12 @@ function drawControlsHelpOverlay(ctx) {
 // ---- Screen overlays ----
 
 function drawSky(ctx) {
-  if (currentArea === 'hidden' || currentLevel === 2) {
+  if (currentArea === 'hidden' || currentLevel === 2 || currentLevel === 5) {
     ctx.fillStyle = '#000000';
   } else if (currentLevel === 3) {
     ctx.fillStyle = '#79B8FF';
+  } else if (currentLevel === 4) {
+    ctx.fillStyle = '#E8A040'; // dusk/forest orange
   } else {
     ctx.fillStyle = '#5C94FC';
   }

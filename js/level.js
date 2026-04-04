@@ -474,3 +474,303 @@ function buildLevel3Hidden() {
 
   return grid;
 }
+
+// ============================================================
+// WORLD 4 — Overworld / Forest (harder than World 1)
+// ============================================================
+
+// Q-block contents for World 1-4
+const Q_CONTENTS_L4 = {
+  '20,9':  'coin',
+  '23,5':  'mushroom',
+  '25,9':  'coin',
+  '48,5':  'coin',
+  '50,5':  'coin',
+  '52,9':  'star',
+  '80,9':  'coin',
+  '83,5':  'mushroom',
+  '110,9': 'coin',
+  '135,5': 'coin',
+  '160,9': 'coin',
+  '162,5': 'star',
+};
+
+function buildLevel4() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) {
+    grid.push(new Array(LEVEL_COLS).fill('.'));
+  }
+
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) {
+      grid[row][col] = id;
+    }
+  }
+
+  // Ground segments — more/longer gaps than level 1 for harder feel
+  const groundSegs = [
+    [0, 60],    // long starting stretch
+    [66, 88],   // gap at 61-65
+    [95, 118],  // gap at 89-94
+    [126, 148], // gap at 119-125
+    [156, 175], // gap at 149-155
+    [183, 197], // gap at 176-182
+    [210, 223], // castle base (no gap before staircase block)
+  ];
+  for (const [start, end] of groundSegs) {
+    for (let c = start; c <= end; c++) {
+      setTile(c, 13, 'G');
+      setTile(c, 14, 'G');
+    }
+  }
+
+  // Pipes: [colL, topRow, height, hasPiranha]
+  const pipes = [
+    [30, 11, 2, false],
+    [42, 10, 3, false],
+    [55, 10, 3, true],   // piranha plant
+    [100,  9, 4, false],
+    [140, 10, 3, false],
+  ];
+  for (const [c, topRow, , ] of pipes) {
+    setTile(c,   topRow, 'PT');
+    setTile(c+1, topRow, 'PR');
+    for (let r = topRow + 1; r <= 13; r++) {
+      setTile(c,   r, 'PL');
+      setTile(c+1, r, 'PB');
+    }
+  }
+
+  // Q-blocks (positions must match Q_CONTENTS_L4 keys)
+  const qBlocks = [
+    [20, 9], [23, 5], [25, 9],
+    [48, 5], [50, 5], [52, 9],
+    [80, 9], [83, 5],
+    [110, 9],
+    [135, 5],
+    [160, 9], [162, 5],
+  ];
+  for (const [c, r] of qBlocks) setTile(c, r, 'Q');
+
+  // Brick rows — height 9 (low) and height 5 (high)
+  // Area 1
+  for (let c = 18; c <= 27; c++) {
+    if (grid[9][c] !== 'Q') setTile(c, 9, 'B');
+  }
+  for (let c = 21; c <= 27; c++) {
+    if (grid[5][c] !== 'Q') setTile(c, 5, 'B');
+  }
+  // Mid-level brick row at height 7
+  for (let c = 68; c <= 74; c++) setTile(c, 7, 'B');
+  // Area 2
+  for (let c = 46; c <= 54; c++) {
+    if (grid[5][c] !== 'Q') setTile(c, 5, 'B');
+  }
+  for (let c = 50; c <= 54; c++) {
+    if (grid[9][c] !== 'Q') setTile(c, 9, 'B');
+  }
+  // Area 3
+  for (let c = 78; c <= 85; c++) {
+    if (grid[9][c] !== 'Q') setTile(c, 9, 'B');
+    if (grid[5][c] !== 'Q') setTile(c, 5, 'B');
+  }
+  // Area 4 — mid-level bricks
+  for (let c = 108; c <= 115; c++) {
+    if (grid[9][c] !== 'Q') setTile(c, 9, 'B');
+  }
+  // Area 5
+  for (let c = 133; c <= 138; c++) {
+    if (grid[5][c] !== 'Q') setTile(c, 5, 'B');
+  }
+  // Area 6
+  for (let c = 158; c <= 165; c++) {
+    if (grid[9][c] !== 'Q') setTile(c, 9, 'B');
+    if (grid[5][c] !== 'Q') setTile(c, 5, 'B');
+  }
+
+  // Hard-block platform mid-level for variety
+  for (let c = 96; c <= 99; c++) setTile(c, 8, 'H');
+  for (let c = 168; c <= 172; c++) setTile(c, 8, 'H');
+
+  // Staircase (cols 198-209)
+  setTile(198, 13, 'H'); setTile(198, 14, 'H');
+  for (let r = 12; r <= 14; r++) setTile(199, r, 'H');
+  for (let r = 11; r <= 14; r++) setTile(200, r, 'H');
+  for (let r = 10; r <= 14; r++) setTile(201, r, 'H');
+  for (let r =  9; r <= 14; r++) setTile(202, r, 'H');
+  for (let r =  8; r <= 14; r++) setTile(203, r, 'H');
+  for (let r =  7; r <= 14; r++) setTile(204, r, 'H');
+  for (let r =  6; r <= 14; r++) setTile(205, r, 'H');
+  for (let c = 206; c <= 209; c++) {
+    setTile(c, 13, 'H');
+    setTile(c, 14, 'H');
+  }
+
+  // Flagpole
+  setTile(210, 4, 'FF');
+  for (let r = 5; r <= 13; r++) setTile(210, r, 'FP');
+
+  // Castle (cols 212-223)
+  for (let c = 212; c <= 223; c += 2) setTile(c, 8, 'CA');
+  for (let r = 9; r <= 11; r++) {
+    for (let c = 212; c <= 223; c++) setTile(c, r, 'CA');
+  }
+  for (let r = 12; r <= 13; r++) {
+    for (let c = 212; c <= 223; c++) {
+      if (c === 216 || c === 217) setTile(c, r, 'CD');
+      else setTile(c, r, 'CA');
+    }
+  }
+
+  return grid;
+}
+
+// ============================================================
+// WORLD 5 — Underground / Castle (hardest)
+// ============================================================
+
+// Q-block contents for World 1-5
+const Q_CONTENTS_L5 = {
+  '22,9':  'coin',
+  '25,9':  'coin',
+  '40,7':  'mushroom',
+  '60,9':  'coin',
+  '75,5':  'coin',
+  '90,7':  'coin',
+  '92,7':  'star',
+  '115,9': 'coin',
+  '130,5': 'mushroom',
+  '150,7': 'coin',
+  '170,9': 'coin',
+  '185,5': 'coin',
+};
+
+function buildLevel5() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) {
+    grid.push(new Array(LEVEL_COLS).fill('.'));
+  }
+
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) {
+      grid[row][col] = id;
+    }
+  }
+
+  // Full ceiling (rows 0-1) — underground/castle theme
+  for (let c = 0; c < LEVEL_COLS; c++) {
+    setTile(c, 0, 'H');
+    setTile(c, 1, 'H');
+  }
+
+  // Full ground (rows 13-14)
+  for (let c = 0; c < LEVEL_COLS; c++) {
+    setTile(c, 13, 'G');
+    setTile(c, 14, 'G');
+  }
+
+  // Multi-layer hard-block platforms — rows 5, 7, 9, 11
+  // Layer at row 11 (near ground)
+  for (let c = 10; c <= 18; c++) setTile(c, 11, 'H');
+  for (let c = 32; c <= 40; c++) setTile(c, 11, 'H');
+  for (let c = 105; c <= 115; c++) setTile(c, 11, 'H');
+  for (let c = 160; c <= 170; c++) setTile(c, 11, 'H');
+
+  // Layer at row 9
+  for (let c = 20; c <= 28; c++) setTile(c, 9, 'H');
+  for (let c = 55; c <= 65; c++) setTile(c, 9, 'H');
+  for (let c = 120; c <= 130; c++) setTile(c, 9, 'H');
+  for (let c = 175; c <= 185; c++) setTile(c, 9, 'H');
+
+  // Layer at row 7
+  for (let c = 38; c <= 43; c++) setTile(c, 7, 'H');
+  for (let c = 82; c <= 95; c++) setTile(c, 7, 'H');
+  for (let c = 145; c <= 155; c++) setTile(c, 7, 'H');
+
+  // Layer at row 5 (near ceiling)
+  for (let c = 70; c <= 78; c++) setTile(c, 5, 'H');
+  for (let c = 125; c <= 133; c++) setTile(c, 5, 'H');
+  for (let c = 180; c <= 188; c++) setTile(c, 5, 'H');
+
+  // Q-blocks (positions must match Q_CONTENTS_L5 keys)
+  const qBlocks = [
+    [22, 9], [25, 9],
+    [40, 7],
+    [60, 9],
+    [75, 5],
+    [90, 7], [92, 7],
+    [115, 9],
+    [130, 5],
+    [150, 7],
+    [170, 9],
+    [185, 5],
+  ];
+  for (const [c, r] of qBlocks) setTile(c, r, 'Q');
+
+  // Brick decorations around Q-blocks for harder density
+  for (let c = 20; c <= 27; c++) {
+    if (grid[9][c] !== 'Q' && grid[9][c] !== 'H') setTile(c, 9, 'B');
+  }
+  for (let c = 88; c <= 94; c++) {
+    if (grid[7][c] !== 'Q' && grid[7][c] !== 'H') setTile(c, 7, 'B');
+  }
+  for (let c = 113; c <= 118; c++) {
+    if (grid[9][c] !== 'Q' && grid[9][c] !== 'H') setTile(c, 9, 'B');
+  }
+  for (let c = 128; c <= 135; c++) {
+    if (grid[5][c] !== 'Q' && grid[5][c] !== 'H') setTile(c, 5, 'B');
+  }
+  for (let c = 168; c <= 173; c++) {
+    if (grid[9][c] !== 'Q' && grid[9][c] !== 'H') setTile(c, 9, 'B');
+  }
+
+  // Obstacle pipes (no piranhas — underground cramped feel)
+  // Pipe 1: col 48, rows 11-13 (2-tile tall)
+  setTile(48, 11, 'PT'); setTile(49, 11, 'PR');
+  setTile(48, 12, 'PL'); setTile(49, 12, 'PB');
+  setTile(48, 13, 'PL'); setTile(49, 13, 'PB');
+
+  // Pipe 2: col 100, rows 10-13 (3-tile tall)
+  setTile(100, 10, 'PT'); setTile(101, 10, 'PR');
+  for (let r = 11; r <= 13; r++) {
+    setTile(100, r, 'PL');
+    setTile(101, r, 'PB');
+  }
+
+  // Pipe 3: col 155, rows 11-13 (2-tile tall)
+  setTile(155, 11, 'PT'); setTile(156, 11, 'PR');
+  setTile(155, 12, 'PL'); setTile(156, 12, 'PB');
+  setTile(155, 13, 'PL'); setTile(156, 13, 'PB');
+
+  // Staircase (cols 198-209)
+  setTile(198, 13, 'H'); setTile(198, 14, 'H');
+  for (let r = 12; r <= 14; r++) setTile(199, r, 'H');
+  for (let r = 11; r <= 14; r++) setTile(200, r, 'H');
+  for (let r = 10; r <= 14; r++) setTile(201, r, 'H');
+  for (let r =  9; r <= 14; r++) setTile(202, r, 'H');
+  for (let r =  8; r <= 14; r++) setTile(203, r, 'H');
+  for (let r =  7; r <= 14; r++) setTile(204, r, 'H');
+  for (let r =  6; r <= 14; r++) setTile(205, r, 'H');
+  for (let c = 206; c <= 209; c++) {
+    setTile(c, 13, 'H');
+    setTile(c, 14, 'H');
+  }
+
+  // Flagpole
+  setTile(210, 4, 'FF');
+  for (let r = 5; r <= 13; r++) setTile(210, r, 'FP');
+
+  // Castle (cols 212-223)
+  for (let c = 212; c <= 223; c += 2) setTile(c, 8, 'CA');
+  for (let r = 9; r <= 11; r++) {
+    for (let c = 212; c <= 223; c++) setTile(c, r, 'CA');
+  }
+  for (let r = 12; r <= 13; r++) {
+    for (let c = 212; c <= 223; c++) {
+      if (c === 216 || c === 217) setTile(c, r, 'CD');
+      else setTile(c, r, 'CA');
+    }
+  }
+
+  return grid;
+}
