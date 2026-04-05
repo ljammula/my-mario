@@ -95,7 +95,7 @@ async function runPlaythrough() {
     );
 
     const transitions = await page.evaluate((targetTransitions) => {
-      const nextLevel = (level) => (level % 3) + 1;
+      const nextLevel = (level) => (level % MAX_LEVEL) + 1;
       const records = [];
 
       // Keep run deterministic and side-effect free in headless mode.
@@ -136,7 +136,7 @@ async function runPlaythrough() {
         }
 
         const reachedWinState = gameState === STATE.WIN;
-        while (gameState === STATE.WIN && loops < 5000) {
+        while ((gameState === STATE.WIN || gameState === STATE.FADE) && loops < 5000) {
           update();
           loops++;
         }
