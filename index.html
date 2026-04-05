@@ -98,7 +98,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    #center-controls #btn-left {
+      width: 130px;
+      height: 52px;
+      font-size: 30px;
+      border-radius: 12px;
     }
     #action-buttons {
       display: flex;
@@ -136,6 +143,7 @@
       letter-spacing: 0.5px;
       background: rgba(30, 30, 70, 0.75);
       border-color: rgba(150, 150, 255, 0.6);
+      margin-bottom: 4px;
     }
   </style>
 </head>
@@ -143,11 +151,11 @@
   <canvas id="gameCanvas" width="512" height="480"></canvas>
   <div id="touch-controls">
     <div id="dpad">
-      <button class="touch-btn" id="btn-left" aria-label="Left">◄</button>
       <button class="touch-btn" id="btn-right" aria-label="Right">►</button>
     </div>
     <div id="center-controls">
       <button class="touch-btn" id="btn-start" aria-label="Start/Pause">START</button>
+      <button class="touch-btn" id="btn-left" aria-label="Left">◄</button>
     </div>
     <div id="action-buttons">
       <button class="touch-btn" id="btn-b" aria-label="Run/Fire">B</button>
