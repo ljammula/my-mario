@@ -94,7 +94,6 @@ const TOUCH_BTN_MAP = {
   'btn-a':      ['Space'],
   'btn-b':      ['ShiftLeft', 'KeyX'],
   'btn-start':  ['Enter'],
-  'btn-select': ['ShiftRight'],
 };
 
 // touchIdentifier → btnId currently pressed by that finger
