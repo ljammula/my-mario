@@ -13,8 +13,8 @@ function updateItems() {
       continue;
     }
 
-    // Gravity for mushroom/star/bomb
-    if (item.type === 'mushroom' || item.type === 'star' || item.type === 'bomb') {
+    // Gravity for mushroom/1up/star/bomb
+    if (item.type === 'mushroom' || item.type === '1up' || item.type === 'star' || item.type === 'bomb') {
       item.vy += GRAVITY;
       if (item.vy > MAX_FALL_SPEED) item.vy = MAX_FALL_SPEED;
     }
@@ -83,7 +83,7 @@ function updateItems() {
         }
       }
       if (item.y > LOGICAL_H + 32) { items.splice(i, 1); continue; }
-    } else if (item.type === 'mushroom') {
+    } else if (item.type === 'mushroom' || item.type === '1up') {
       // Horizontal walk + wall bounce
       item.x += item.vx;
       if (item.vx < 0) {
@@ -140,6 +140,10 @@ function collectItem(item) {
       mario.h    = 24;
       mario.y   -= 8;
     }
+  } else if (item.type === '1up') {
+    score += 1000;
+    lives++;
+    AudioSystem.playSFX('coin');
   } else if (item.type === 'fireflower' || item.type === 'bomb') {
     score += 1000;
     if (mario.form !== 'fire') {

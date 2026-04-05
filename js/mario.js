@@ -43,7 +43,7 @@ function handleHeadBonk(col, row) {
         });
       } else {
         items.push({
-          type: 'bomb',
+          type: content === 'flower' ? 'fireflower' : 'bomb',
           x: col * TILE + 1,
           y: (row - 1) * TILE,
           vx: 1.5, vy: 0,
@@ -51,6 +51,16 @@ function handleHeadBonk(col, row) {
           grounded: false,
         });
       }
+      AudioSystem.playSFX('bump');
+    } else if (content === '1up') {
+      items.push({
+        type: '1up',
+        x: col * TILE,
+        y: (row - 1) * TILE,
+        vx: 1.5, vy: 0,
+        w: 14, h: 14,
+        grounded: false,
+      });
       AudioSystem.playSFX('bump');
     } else if (content === 'star') {
       items.push({
@@ -170,7 +180,7 @@ function updateMario() {
   // Tile collision
   mario.grounded = resolvePlayerTileCollision(mario, handleHeadBonk);
   if (pipeTransitionLock > 0) pipeTransitionLock--;
-  tryLevel3PipeTransition(downHeld);
+  tryPipeAreaTransition(downHeld);
 
   // World left boundary
   if (mario.x < 0) { mario.x = 0; mario.vx = 0; }
@@ -237,31 +247,49 @@ function updateMario() {
   if (fireballCooldown > 0) fireballCooldown--;
 }
 
-function tryLevel3PipeTransition(downHeld) {
-  if (currentLevel !== 3 || !downHeld || !mario.grounded || pipeTransitionLock > 0) return;
+function tryPipeAreaTransition(downHeld) {
+  if (!downHeld || !mario.grounded || pipeTransitionLock > 0) return;
 
   const centerX = mario.x + mario.w / 2;
   const feetY = mario.y + mario.h;
 
-  if (currentArea === 'main') {
-    const entryCol = 120;
-    const pipeTopY = 11 * TILE;
-    const onPipe = centerX >= entryCol * TILE &&
-                   centerX <= (entryCol + 2) * TILE &&
-                   Math.abs(feetY - pipeTopY) <= 2;
-    if (onPipe) {
-      enterLevel3HiddenArea();
+  if (currentLevel === 3) {
+    if (currentArea === 'main') {
+      const entryCol = 120;
+      const pipeTopY = 11 * TILE;
+      const onPipe = centerX >= entryCol * TILE &&
+                     centerX <= (entryCol + 2) * TILE &&
+                     Math.abs(feetY - pipeTopY) <= 2;
+      if (onPipe) enterLevel3HiddenArea();
+      return;
     }
+
+    const returnCol = 196;
+    const returnTopY = 11 * TILE;
+    const onReturnPipe = centerX >= returnCol * TILE &&
+                         centerX <= (returnCol + 2) * TILE &&
+                         Math.abs(feetY - returnTopY) <= 2;
+    if (onReturnPipe) exitLevel3HiddenArea();
     return;
   }
 
-  const returnCol = 196;
-  const returnTopY = 11 * TILE;
-  const onReturnPipe = centerX >= returnCol * TILE &&
-                       centerX <= (returnCol + 2) * TILE &&
-                       Math.abs(feetY - returnTopY) <= 2;
-  if (onReturnPipe) {
-    exitLevel3HiddenArea();
+  if (currentLevel === 11) {
+    if (currentArea === 'main') {
+      const entryCol = 120;
+      const pipeTopY = 11 * TILE;
+      const onPipe = centerX >= entryCol * TILE &&
+                     centerX <= (entryCol + 2) * TILE &&
+                     Math.abs(feetY - pipeTopY) <= 2;
+      if (onPipe) enterLevel11HiddenArea();
+      return;
+    }
+
+    const returnCol = 196;
+    const returnTopY = 11 * TILE;
+    const onReturnPipe = centerX >= returnCol * TILE &&
+                         centerX <= (returnCol + 2) * TILE &&
+                         Math.abs(feetY - returnTopY) <= 2;
+    if (onReturnPipe) exitLevel11HiddenArea();
   }
 }
 
