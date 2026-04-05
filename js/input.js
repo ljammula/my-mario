@@ -74,7 +74,7 @@ function resizeCanvas() {
   const canvas = document.getElementById('gameCanvas');
   if (!canvas) return;
   const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-  const controlsH = isTouchDevice ? 120 : 0;
+  const controlsH = isTouchDevice ? 190 : 0;
   const availW = window.innerWidth;
   const availH = window.innerHeight - controlsH;
   const scale  = Math.min(availW / CANVAS_W, availH / CANVAS_H);
@@ -89,11 +89,12 @@ resizeCanvas();
 
 // Maps button id → key codes to activate
 const TOUCH_BTN_MAP = {
-  'btn-left':  ['ArrowLeft'],
-  'btn-right': ['ArrowRight'],
-  'btn-a':     ['Space'],
-  'btn-b':     ['ShiftLeft', 'KeyX'],
-  'btn-start': ['Enter'],
+  'btn-left':   ['ArrowLeft'],
+  'btn-right':  ['ArrowRight'],
+  'btn-a':      ['Space'],
+  'btn-b':      ['ShiftLeft', 'KeyX'],
+  'btn-start':  ['Enter'],
+  'btn-select': ['ShiftRight'],
 };
 
 // touchIdentifier → btnId currently pressed by that finger
