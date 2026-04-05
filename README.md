@@ -8,6 +8,14 @@ NES-accurate physics, pixel-art sprites drawn via Canvas 2D, procedural Web Audi
 
 ---
 
+## Recent Updates / Changelog
+
+- **[In Progress]** Level-11: New level being implemented, will follow full NES difficulty and styling conventions
+- **[Bugfix]** Mario Stomp: Fix in progress to ensure Mario does NOT die when stomping enemies across all levels (see `.specs/queue/` for spec tracking)
+- Automated test coverage extended for cross-level play and bugfix validation
+
+---
+
 ## Quick start
 
 ```bash
@@ -49,6 +57,14 @@ Touch controls appear automatically on touch devices (phones, tablets). A D-pad 
 - **HUD** — score, coins (×), world, countdown timer, lives
 - **Audio** — procedural Web Audio API, no external files; overworld music + SFX (jump, stomp, coin, break, death, flagpole, etc.)
 - **Mobile** — responsive canvas scaling, fixed-bottom touch controls, safe-area insets, landscape support
+
+---
+
+## Project Workflow
+
+- **Spec-driven development:** All major features and bugfixes are planned via detailed implementation specs (`.specs/queue/` — for in-progress, `.specs/done/` — for completed)
+- **Automated tests required:** Any code or feature change must include passing Playwright tests (`tests/`)
+- **Changelog and feature tracking:** See this README and `.specs/` folders for real-time work-in-progress
 
 ---
 
