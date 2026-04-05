@@ -434,36 +434,6 @@ function drawPiranha(ctx) {
   ctx.fillRect(x + w - 4*s, y + 3*s, 2*s, 2*s);
 }
 
-// ---- HUD ----
-
-function drawHUD(ctx) {
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, CANVAS_W, 48);
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '12px monospace';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-
-  ctx.fillText('MARIO', 24, 10);
-  ctx.fillText(String(score).padStart(6, '0'), 24, 28);
-
-  ctx.fillText('\u00D7' + String(coins).padStart(2,'0'), 200, 28);
-  ctx.fillStyle = '#FFD700';
-  ctx.beginPath();
-  ctx.arc(196, 35, 5, 0, Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = '#FFFFFF';
-
-  ctx.fillText('WORLD', 296, 10);
-  ctx.fillText('1-' + currentLevel, 316, 28);
-
-  ctx.fillText('TIME', 400, 10);
-  ctx.fillText(String(Math.max(0, Math.ceil(gameTimer / 60))).padStart(3,'0'), 420, 28);
-
-  ctx.fillText('\u2665\u00D7' + lives, 100, 10);
-}
-
 function drawControlsHelpOverlay(ctx) {
   const panelW = 188;
   const panelH = 86;

@@ -71,6 +71,7 @@ function run(ctx, code) {
 }
 
 const sourceRender = read('js/render.js');
+const sourceHud = read('js/hud.js');
 const sourceLevel = read('js/level.js');
 const sourceState = read('js/state.js');
 const sourceGame = read('js/game.js');
@@ -88,6 +89,8 @@ assert(sourceEnemies.includes('piranha.pipeX'), 'Expected dynamic piranha pipe t
 assert(sourceMario.includes("content === 'flower' || content === 'bomb'"), 'Expected explicit bomb/flower block handling in js/mario.js');
 assert(sourceItems.includes("item.type === 'fireflower' || item.type === 'bomb'"), 'Expected bomb pickup to use fire-power collect path in js/items.js');
 assert(sourceRender.includes("const overallsColor = form === 'fire'"), 'Expected fire-form Mario palette override in js/render.js');
+assert(sourceHud.includes('function drawHUD(ctx)'), 'Expected drawHUD() in js/hud.js');
+assert(sourceHud.includes("'\\u00D7' + String(coins).padStart(2, '0')"), 'Expected coin counter text in js/hud.js');
 
 for (const label of ['CONTROLS', '\\u2190/\\u2192  MOVE', 'SPACE/Z  JUMP', 'ENTER  START/PAUSE']) {
   assert(sourceRender.includes(label), `Expected controls label "${label}" in js/render.js`);
@@ -1352,7 +1355,90 @@ assert.strictEqual(facing.facingLeft,  -1, 'Mario should face left (-1) when pre
 assert.strictEqual(facing.facingRight,  1, 'Mario should face right (1) when pressing ArrowRight');
 
 // ============================================================
-// SECTION 6: Jump mechanic tests
+// SECTION 6: Coin HUD + persistence tests
+// ============================================================
+
+const ctxCoin = createContext();
+loadScripts(ctxCoin, [
+  'js/constants.js',
+  'js/level.js',
+  'js/state.js',
+  'js/tiles.js',
+  'js/collision.js',
+  'js/mario.js',
+  'js/hud.js',
+]);
+
+const coinHudChecks = run(ctxCoin, `(() => {
+  currentLevel = 1;
+  resetLevel(false);
+  score = 0;
+  coins = 0;
+  lives = 3;
+
+  const coinKeys = Object.keys(Q_CONTENTS)
+    .filter((k) => Q_CONTENTS[k] === 'coin')
+    .slice(0, 2)
+    .map((k) => k.split(',').map(Number));
+
+  const beforeCoins = coins;
+  for (const [col, row] of coinKeys) {
+    handleHeadBonk(col, row);
+  }
+  const afterCoins = coins;
+
+  const draws = [];
+  const arcs = [];
+  const hudCtx = {
+    fillStyle: '#000000',
+    font: '',
+    textAlign: 'left',
+    textBaseline: 'top',
+    fillRect() {},
+    beginPath() {},
+    arc(x, y, r) { arcs.push({ x, y, r }); },
+    fill() {},
+    fillText(text, x, y) { draws.push({ text, x, y }); },
+  };
+  drawHUD(hudCtx);
+  const hasUpdatedCounter = draws.some((d) => d.text === '\\u00D702' && d.x === 102 && d.y === 10);
+  const hasCoinIcon = arcs.some((a) => a.x === 96 && a.y === 17 && a.r === 5);
+
+  currentLevel = 2;
+  resetLevel(true);
+  const coinsAfterLevelTransition = coins;
+
+  lives--;
+  resetLevel(true);
+  const coinsAfterLifeTransition = coins;
+
+  currentLevel = 3;
+  resetLevel(true);
+  enterLevel3HiddenArea();
+  exitLevel3HiddenArea();
+  const coinsAfterAreaTransition = coins;
+
+  return {
+    beforeCoins,
+    afterCoins,
+    hasUpdatedCounter,
+    hasCoinIcon,
+    coinsAfterLevelTransition,
+    coinsAfterLifeTransition,
+    coinsAfterAreaTransition,
+  };
+})()`);
+
+assert.strictEqual(coinHudChecks.beforeCoins, 0, 'Expected coin counter to start at 0 for fresh run');
+assert.strictEqual(coinHudChecks.afterCoins, 2, 'Collecting two coins should increment counter to 2');
+assert(coinHudChecks.hasUpdatedCounter, 'Expected HUD to display updated coin counter in upper-left');
+assert(coinHudChecks.hasCoinIcon, 'Expected HUD to render a gold coin icon');
+assert.strictEqual(coinHudChecks.coinsAfterLevelTransition, 2, 'Coin count should persist through level transitions');
+assert.strictEqual(coinHudChecks.coinsAfterLifeTransition, 2, 'Coin count should persist through life transitions');
+assert.strictEqual(coinHudChecks.coinsAfterAreaTransition, 2, 'Coin count should persist through area transitions');
+
+// ============================================================
+// SECTION 7: Jump mechanic tests
 // ============================================================
 
 // Jump buffer: queues a jump while airborne, fires on landing
