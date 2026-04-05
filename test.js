@@ -800,6 +800,107 @@ assert.strictEqual(
   'Expected stomp behavior consistency across all levels, failed levels: ' + stompConsistencyAcrossLevelsChecks.join(', ')
 );
 
+const ctxOneWay = createContext();
+loadScripts(ctxOneWay, ['js/constants.js', 'js/level.js', 'js/state.js', 'js/tiles.js', 'js/collision.js']);
+const oneWayPlatformChecks = run(
+  ctxOneWay,
+  `(() => {
+    grid = Array.from({ length: LEVEL_ROWS }, () => new Array(LEVEL_COLS).fill('.'));
+    const col = 10;
+    const row = 8;
+    grid[row][col] = 'M';
+
+    const passThroughFromBelow = {
+      x: col * TILE + 2,
+      y: row * TILE + 9,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: -10,
+    };
+    const passedGrounded = resolvePlayerTileCollision(passThroughFromBelow);
+
+    const landFromAbove = {
+      x: col * TILE + 2,
+      y: row * TILE - 20,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: 6,
+    };
+    const landedGrounded = resolvePlayerTileCollision(landFromAbove);
+
+    const standOnTop = {
+      x: col * TILE + 2,
+      y: row * TILE - 16,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: 0,
+    };
+    const standingGrounded = resolvePlayerTileCollision(standOnTop);
+
+    const leftEdgeLanding = {
+      x: col * TILE - 2,
+      y: row * TILE - 20,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: 6,
+    };
+    const leftEdgeGrounded = resolvePlayerTileCollision(leftEdgeLanding);
+
+    const rightEdgeLanding = {
+      x: col * TILE + 2,
+      y: row * TILE - 20,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: 6,
+    };
+    const rightEdgeGrounded = resolvePlayerTileCollision(rightEdgeLanding);
+
+    const sideClipNoLand = {
+      x: col * TILE - 11,
+      y: row * TILE - 20,
+      w: 12,
+      h: 16,
+      vx: 0,
+      vy: 6,
+    };
+    const sideClipGrounded = resolvePlayerTileCollision(sideClipNoLand);
+
+    return {
+      passThroughY: passThroughFromBelow.y,
+      passThroughVy: passThroughFromBelow.vy,
+      passThroughGrounded: passedGrounded,
+      landedY: landFromAbove.y,
+      landedVy: landFromAbove.vy,
+      landedGrounded,
+      standingGrounded,
+      leftEdgeY: leftEdgeLanding.y,
+      rightEdgeY: rightEdgeLanding.y,
+      leftEdgeGrounded,
+      rightEdgeGrounded,
+      sideClipY: sideClipNoLand.y,
+      sideClipGrounded,
+    };
+  })()`
+);
+assert.strictEqual(oneWayPlatformChecks.passThroughY, 127, 'Expected Mario to pass upward through one-way platform from below');
+assert.strictEqual(oneWayPlatformChecks.passThroughVy, -10, 'Expected no upward collision response when passing through one-way platform');
+assert.strictEqual(oneWayPlatformChecks.passThroughGrounded, false, 'Expected pass-through jump from below not to set grounded');
+assert.strictEqual(oneWayPlatformChecks.landedY, 112, 'Expected falling Mario to snap to one-way platform top');
+assert.strictEqual(oneWayPlatformChecks.landedVy, 0, 'Expected landing on one-way platform to zero vertical velocity');
+assert.strictEqual(oneWayPlatformChecks.landedGrounded, true, 'Expected falling from above to ground Mario on one-way platform');
+assert.strictEqual(oneWayPlatformChecks.standingGrounded, true, 'Expected standing on one-way platform with vy=0 to remain grounded');
+assert.strictEqual(oneWayPlatformChecks.leftEdgeY, 112, 'Expected one-way platform landing to work at left edge overlap');
+assert.strictEqual(oneWayPlatformChecks.rightEdgeY, 112, 'Expected one-way platform landing to work at right edge overlap');
+assert.strictEqual(oneWayPlatformChecks.leftEdgeGrounded, true, 'Expected grounded=true when landing near left edge of one-way platform');
+assert.strictEqual(oneWayPlatformChecks.rightEdgeGrounded, true, 'Expected grounded=true when landing near right edge of one-way platform');
+assert.strictEqual(oneWayPlatformChecks.sideClipY, 114, 'Expected barely clipping side of one-way platform not to force landing');
+assert.strictEqual(oneWayPlatformChecks.sideClipGrounded, false, 'Expected no grounding when overlap misses inset collision probes');
+
 const ctxBomb = createContext();
 loadScripts(ctxBomb, ['js/constants.js', 'js/level.js', 'js/state.js', 'js/tiles.js', 'js/collision.js', 'js/mario.js', 'js/items.js']);
 const bombPowerChecks = run(

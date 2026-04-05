@@ -5,6 +5,12 @@
 function resolvePlayerTileCollision(entity, onHeadBonk) {
   const hw = entity.w;
   const hh = entity.h;
+  const prevBottom = entity.y + hh;
+  const isOneWayPlatform = (col, row) => getTile(col, row) === 'M';
+  const blocksFromSideOrBelow = (col, row) => {
+    if (!isSolid(col, row)) return false;
+    return !isOneWayPlatform(col, row);
+  };
 
   // Horizontal pass
   entity.x += entity.vx;
@@ -13,7 +19,7 @@ function resolvePlayerTileCollision(entity, onHeadBonk) {
     const rowTop = Math.floor(entity.y / TILE);
     const rowBot = Math.floor((entity.y + hh - 1) / TILE);
     for (let r = rowTop; r <= rowBot; r++) {
-      if (isSolid(col, r)) {
+      if (blocksFromSideOrBelow(col, r)) {
         entity.x = (col + 1) * TILE;
         entity.vx = 0;
         break;
@@ -24,7 +30,7 @@ function resolvePlayerTileCollision(entity, onHeadBonk) {
     const rowTop = Math.floor(entity.y / TILE);
     const rowBot = Math.floor((entity.y + hh - 1) / TILE);
     for (let r = rowTop; r <= rowBot; r++) {
-      if (isSolid(col, r)) {
+      if (blocksFromSideOrBelow(col, r)) {
         entity.x = col * TILE - hw;
         entity.vx = 0;
         break;
@@ -44,7 +50,7 @@ function resolvePlayerTileCollision(entity, onHeadBonk) {
     const colR = Math.floor((entity.x + hw - 1 - inset) / TILE);
     let bonked = false;
     for (let c = colL; c <= colR; c++) {
-      if (isSolid(c, row)) {
+      if (blocksFromSideOrBelow(c, row)) {
         entity.y  = (row + 1) * TILE;
         entity.vy = 0;
         if (!bonked && onHeadBonk) {
@@ -61,7 +67,10 @@ function resolvePlayerTileCollision(entity, onHeadBonk) {
     const colL = Math.floor((entity.x + inset) / TILE);
     const colR = Math.floor((entity.x + hw - 1 - inset) / TILE);
     for (let c = colL; c <= colR; c++) {
-      if (isSolid(c, row)) {
+      const solid = isSolid(c, row);
+      const oneWay = solid && isOneWayPlatform(c, row);
+      const canLandOnOneWay = oneWay && prevBottom <= row * TILE;
+      if ((solid && !oneWay) || canLandOnOneWay) {
         entity.y  = row * TILE - hh;
         entity.vy = 0;
         grounded  = true;
@@ -72,7 +81,9 @@ function resolvePlayerTileCollision(entity, onHeadBonk) {
     if (!grounded && entity.vy === 0) {
       const standRow = Math.floor((entity.y + hh) / TILE);
       for (let c = colL; c <= colR; c++) {
-        if (isSolid(c, standRow)) { grounded = true; break; }
+        const solid = isSolid(c, standRow);
+        const oneWay = solid && isOneWayPlatform(c, standRow);
+        if ((solid && !oneWay) || oneWay) { grounded = true; break; }
       }
     }
   }
