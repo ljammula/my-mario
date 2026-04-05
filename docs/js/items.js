@@ -13,8 +13,8 @@ function updateItems() {
       continue;
     }
 
-    // Gravity for mushroom/star
-    if (item.type === 'mushroom' || item.type === 'star') {
+    // Gravity for mushroom/star/bomb
+    if (item.type === 'mushroom' || item.type === 'star' || item.type === 'bomb') {
       item.vy += GRAVITY;
       if (item.vy > MAX_FALL_SPEED) item.vy = MAX_FALL_SPEED;
     }
@@ -51,6 +51,38 @@ function updateItems() {
           break;
         }
       }
+    } else if (item.type === 'bomb') {
+      // Horizontal walk + wall bounce (same as mushroom)
+      item.x += item.vx;
+      if (item.vx < 0) {
+        const col  = Math.floor(item.x / TILE);
+        const rowT = Math.floor(item.y / TILE);
+        const rowB = Math.floor((item.y + item.h - 1) / TILE);
+        for (let r = rowT; r <= rowB; r++) {
+          if (isSolid(col, r)) { item.x = (col+1)*TILE; item.vx = -item.vx; break; }
+        }
+      } else {
+        const col  = Math.floor((item.x + item.w - 1) / TILE);
+        const rowT = Math.floor(item.y / TILE);
+        const rowB = Math.floor((item.y + item.h - 1) / TILE);
+        for (let r = rowT; r <= rowB; r++) {
+          if (isSolid(col, r)) { item.x = col*TILE - item.w; item.vx = -item.vx; break; }
+        }
+      }
+      item.y += item.vy;
+      const botYb = item.y + item.h;
+      const rowB2 = Math.floor(botYb / TILE);
+      const colLb = Math.floor(item.x / TILE);
+      const colRb = Math.floor((item.x + item.w - 1) / TILE);
+      for (let c = colLb; c <= colRb; c++) {
+        if (isSolid(c, rowB2)) {
+          item.y        = rowB2 * TILE - item.h;
+          item.vy       = 0;
+          item.grounded = true;
+          break;
+        }
+      }
+      if (item.y > LOGICAL_H + 32) { items.splice(i, 1); continue; }
     } else if (item.type === 'mushroom') {
       // Horizontal walk + wall bounce
       item.x += item.vx;

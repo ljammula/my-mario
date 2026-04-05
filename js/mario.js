@@ -46,7 +46,7 @@ function handleHeadBonk(col, row) {
           type: 'bomb',
           x: col * TILE + 1,
           y: (row - 1) * TILE,
-          vx: 0, vy: 0,
+          vx: 1.5, vy: 0,
           w: 14, h: 14,
           grounded: false,
         });

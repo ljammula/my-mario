@@ -133,13 +133,13 @@ function checkEnemyMarioCollision(enemy) {
     return;
   }
 
-  // Stomp check: mario is descending and his center is above enemy center
+  // Stomp check: mario is descending and his feet land in the top 70% of the enemy.
+  // Using feet-vs-enemy-height avoids the center-comparison failure with fast enemies
+  // or same-height characters (e.g. super Mario h=24 stomping a koopa h=24).
   const marioFeet = mario.y + mario.h;
-  const marioCenterY = mario.y + mario.h * 0.5;
-  const enemyCenterY = enemy.y + enemy.h * 0.5;
   const hOverlap  = Math.min(mario.x + mario.w, enemy.x + enemy.w) - Math.max(mario.x, enemy.x);
 
-  if (mario.vy > 0 && marioFeet > enemy.y + 1 && marioCenterY < enemyCenterY && hOverlap > 1) {
+  if (mario.vy > 0 && marioFeet <= enemy.y + enemy.h * 0.70 && hOverlap > 1) {
     mario.vy       = -5;
     mario.grounded = false;
     if (enemy.type === 'goomba') {
