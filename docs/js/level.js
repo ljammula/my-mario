@@ -1324,3 +1324,168 @@ function buildLevel10() {
   }
   return grid;
 }
+
+// ============================================================
+// WORLD 11 — "Sky Fortress"
+// ============================================================
+
+const Q_CONTENTS_L11_MAIN = {
+  '22,9':   'coin',
+  '38,7':   'mushroom',
+  '68,9':   'coin',
+  '94,5':   'flower',
+  '118,7':  'coin',
+  '132,9':  'coin',
+  '155,5':  '1up',
+  '171,7':  'coin',
+  '186,5':  'star',
+};
+
+const Q_CONTENTS_L11_HIDDEN = {
+  '28,9':   'coin',
+  '32,9':   'coin',
+  '36,9':   'coin',
+  '68,7':   'coin',
+  '72,7':   'coin',
+  '76,7':   'coin',
+  '108,9':  'coin',
+  '112,9':  'coin',
+  '156,7':  'coin',
+  '160,7':  'coin',
+  '168,7':  'mushroom',
+};
+
+function buildLevel11Main() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Fortress floor with deliberate holes and falling-floor style brick lanes.
+  const groundSegs = [
+    [0, 44], [48, 83], [88, 109], [114, 146], [151, 197], [210, 223],
+  ];
+  for (const [start, end] of groundSegs) {
+    for (let c = start; c <= end; c++) {
+      setTile(c, 13, 'G');
+      setTile(c, 14, 'G');
+    }
+  }
+
+  // Main pipes: cannon lane, piranha lane, hidden-room entry, and end gauntlet.
+  const pipes = [
+    [24,11], [52,10], [86,10], [120,11], [166,10],
+  ];
+  for (const [c, topRow] of pipes) {
+    setTile(c, topRow, 'PT');
+    setTile(c + 1, topRow, 'PR');
+    for (let r = topRow + 1; r <= 13; r++) {
+      setTile(c, r, 'PL');
+      setTile(c + 1, r, 'PB');
+    }
+  }
+
+  // Cloud lifts / moving-platform stand-ins.
+  const liftBands = [
+    [34, 42, 10], [62, 70, 9], [90, 98, 8], [114, 122, 9], [148, 156, 8], [172, 178, 7],
+  ];
+  for (const [start, end, row] of liftBands) {
+    for (let c = start; c <= end; c++) setTile(c, row, 'M');
+  }
+
+  // Timed cannon towers and fortress battlements.
+  const towers = [[73, 10], [115, 9], [167, 10]];
+  for (const [col, top] of towers) {
+    for (let r = top; r <= 13; r++) setTile(col, r, 'H');
+    setTile(col + 1, top, 'H');
+    setTile(col + 1, top + 1, 'H');
+  }
+
+  // Breakable floor strips (acts as collapse-risk path if broken by super/fire).
+  for (let c = 58; c <= 64; c++) setTile(c, 11, 'B');
+  for (let c = 126; c <= 132; c++) setTile(c, 11, 'B');
+
+  // Vertical climb and maze gates near the end.
+  for (let r = 3; r <= 12; r++) setTile(180, r, 'H');
+  for (let r = 2; r <= 11; r++) setTile(188, r, 'H');
+  for (let c = 181; c <= 187; c++) setTile(c, 6, 'H');
+  for (let c = 181; c <= 187; c++) if (c !== 184 && c !== 185) setTile(c, 10, 'H');
+
+  // Main question / reward lanes.
+  setTile(22, 9, 'Q');
+  setTile(38, 7, 'Q');
+  setTile(68, 9, 'Q');
+  setTile(94, 5, 'Q');   // fire flower
+  setTile(118, 7, 'Q');
+  setTile(132, 9, 'Q');
+  setTile(155, 5, 'Q');  // hidden 1-up
+  setTile(171, 7, 'Q');
+  setTile(186, 5, 'Q');
+
+  // Support bricks around Q-blocks.
+  for (let c = 20; c <= 24; c++) if (c !== 22) setTile(c, 9, 'B');
+  for (let c = 36; c <= 40; c++) if (c !== 38) setTile(c, 7, 'B');
+  for (let c = 66; c <= 70; c++) if (c !== 68) setTile(c, 9, 'B');
+  for (let c = 92; c <= 96; c++) if (c !== 94) setTile(c, 5, 'B');
+  for (let c = 116; c <= 120; c++) if (c !== 118) setTile(c, 7, 'B');
+  for (let c = 130; c <= 134; c++) if (c !== 132) setTile(c, 9, 'B');
+  for (let c = 153; c <= 157; c++) if (c !== 155) setTile(c, 5, 'B');
+  for (let c = 169; c <= 173; c++) if (c !== 171) setTile(c, 7, 'B');
+  for (let c = 184; c <= 188; c++) if (c !== 186) setTile(c, 5, 'B');
+
+  // Fortress ascent into final flag/door.
+  setTile(198,13,'H'); setTile(198,14,'H');
+  for (let r = 12; r <= 14; r++) setTile(199, r, 'H');
+  for (let r = 11; r <= 14; r++) setTile(200, r, 'H');
+  for (let r = 10; r <= 14; r++) setTile(201, r, 'H');
+  for (let r =  9; r <= 14; r++) setTile(202, r, 'H');
+  for (let r =  8; r <= 14; r++) setTile(203, r, 'H');
+  for (let r =  7; r <= 14; r++) setTile(204, r, 'H');
+  for (let r =  6; r <= 14; r++) setTile(205, r, 'H');
+  for (let c = 206; c <= 209; c++) { setTile(c, 13, 'H'); setTile(c, 14, 'H'); }
+
+  setTile(210,4,'FF');
+  for (let r = 5; r <= 13; r++) setTile(210, r, 'FP');
+  for (let c = 212; c <= 223; c += 2) setTile(c, 8, 'CA');
+  for (let r = 9; r <= 11; r++) for (let c = 212; c <= 223; c++) setTile(c, r, 'CA');
+  for (let r = 12; r <= 13; r++) for (let c = 212; c <= 223; c++) {
+    if (c === 216 || c === 217) setTile(c, r, 'CD'); else setTile(c, r, 'CA');
+  }
+
+  return grid;
+}
+
+function buildLevel11Hidden() {
+  const grid = [];
+  for (let r = 0; r < LEVEL_ROWS; r++) grid.push(new Array(LEVEL_COLS).fill('.'));
+  function setTile(col, row, id) {
+    if (col >= 0 && col < LEVEL_COLS && row >= 0 && row < LEVEL_ROWS) grid[row][col] = id;
+  }
+
+  // Underground room shell
+  for (let c = 0; c < LEVEL_COLS; c++) { setTile(c, 0, 'H'); setTile(c, 1, 'H'); }
+  for (let c = 0; c < LEVEL_COLS; c++) { setTile(c, 13, 'G'); setTile(c, 14, 'G'); }
+
+  // Entry pipe (from main level)
+  setTile(8,11,'PT'); setTile(9,11,'PR');
+  for (let r = 12; r <= 13; r++) { setTile(8,r,'PL'); setTile(9,r,'PB'); }
+
+  // Coin lane platforms
+  for (let c = 24; c <= 40; c++) setTile(c, 9, 'B');
+  for (let c = 64; c <= 80; c++) setTile(c, 7, 'B');
+  for (let c = 104; c <= 116; c++) setTile(c, 9, 'B');
+  for (let c = 152; c <= 170; c++) setTile(c, 7, 'B');
+
+  // Question blocks for coin haul and one mushroom
+  setTile(28,9,'Q'); setTile(32,9,'Q'); setTile(36,9,'Q');
+  setTile(68,7,'Q'); setTile(72,7,'Q'); setTile(76,7,'Q');
+  setTile(108,9,'Q'); setTile(112,9,'Q');
+  setTile(156,7,'Q'); setTile(160,7,'Q'); setTile(168,7,'Q');
+
+  // Return pipe near room end
+  setTile(196,11,'PT'); setTile(197,11,'PR');
+  for (let r = 12; r <= 13; r++) { setTile(196,r,'PL'); setTile(197,r,'PB'); }
+
+  return grid;
+}
