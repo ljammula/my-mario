@@ -81,16 +81,25 @@ const sourceItems = read('js/items.js');
 
 assert(sourceLevel.includes('function buildLevel3Main()'), 'Expected buildLevel3Main() in js/level.js');
 assert(sourceLevel.includes('function buildLevel3Hidden()'), 'Expected buildLevel3Hidden() in js/level.js');
+assert(sourceLevel.includes('function buildLevel11Main()'), 'Expected buildLevel11Main() in js/level.js');
+assert(sourceLevel.includes('function buildLevel11Hidden()'), 'Expected buildLevel11Hidden() in js/level.js');
 assert(sourceState.includes('enterLevel3HiddenArea'), 'Expected hidden-area transition helpers in js/state.js');
+assert(sourceState.includes('enterLevel11HiddenArea'), 'Expected Level 11 hidden-area transition helpers in js/state.js');
 assert(sourceGame.includes('currentLevel = (currentLevel % MAX_LEVEL) + 1'), 'Expected MAX_LEVEL rotation in js/game.js');
 assert(sourceGame.includes('resetLevel(true);'), 'Expected respawn/advance to preserve power state');
 assert(sourceGame.includes('resetLevel(false);'), 'Expected fresh start paths to reset power state');
 assert(sourceEnemies.includes('piranha.pipeX'), 'Expected dynamic piranha pipe targeting in js/enemies.js');
+assert(sourceEnemies.includes('winged_koopa'), 'Expected winged koopa logic in js/enemies.js');
+assert(sourceEnemies.includes('bullet_launcher'), 'Expected Bullet Bill launcher logic in js/enemies.js');
+assert(sourceEnemies.includes('hammer_bro'), 'Expected Hammer Bro logic in js/enemies.js');
 assert(sourceMario.includes("content === 'flower' || content === 'bomb'"), 'Expected explicit bomb/flower block handling in js/mario.js');
+assert(sourceMario.includes("content === '1up'"), 'Expected hidden 1-up block handling in js/mario.js');
 assert(sourceItems.includes("item.type === 'fireflower' || item.type === 'bomb'"), 'Expected bomb pickup to use fire-power collect path in js/items.js');
+assert(sourceItems.includes("item.type === 'mushroom' || item.type === '1up'"), 'Expected 1-up items to share mushroom movement logic in js/items.js');
 assert(sourceRender.includes("const overallsColor = form === 'fire'"), 'Expected fire-form Mario palette override in js/render.js');
 assert(sourceHud.includes('function drawHUD(ctx)'), 'Expected drawHUD() in js/hud.js');
 assert(sourceHud.includes("'\\u00D7' + String(coins).padStart(2, '0')"), 'Expected coin counter text in js/hud.js');
+assert(sourceLevel.includes('Sky Fortress'), 'Expected Sky Fortress level-11 theme declaration in js/level.js');
 
 for (const label of ['CONTROLS', '\\u2190/\\u2192  MOVE', 'SPACE/Z  JUMP', 'ENTER  START/PAUSE']) {
   assert(sourceRender.includes(label), `Expected controls label "${label}" in js/render.js`);
@@ -158,6 +167,62 @@ assert(secretChecks.mainHasMushroom, 'Expected Level 3 main to include mushroom 
 assert(secretChecks.mainHasStar, 'Expected Level 3 main to include star secret');
 assert(secretChecks.hiddenHasStar, 'Expected Level 3 hidden area to include star secret');
 
+const level11ShapeChecks = run(
+  ctx,
+  `(() => {
+    const main = buildLevel11Main();
+    const hidden = buildLevel11Hidden();
+    return {
+      mainRows: main.length,
+      hiddenRows: hidden.length,
+      mainCols: main[0].length,
+      hiddenCols: hidden[0].length,
+      mainFlag: main[4][210],
+      hiddenReturnPipe: hidden[11][196],
+      hiddenEntryPipe: hidden[11][8],
+      hasMainPiranhaPipe: main[10][86] === 'PT' && main[10][87] === 'PR',
+      hasMainEntryPipe: main[11][120] === 'PT' && main[11][121] === 'PR'
+    };
+  })()`
+);
+assert.strictEqual(level11ShapeChecks.mainRows, 15, 'Expected Level 11 main area rows = 15');
+assert.strictEqual(level11ShapeChecks.hiddenRows, 15, 'Expected Level 11 hidden area rows = 15');
+assert.strictEqual(level11ShapeChecks.mainCols, 224, 'Expected Level 11 main area cols = 224');
+assert.strictEqual(level11ShapeChecks.hiddenCols, 224, 'Expected Level 11 hidden area cols = 224');
+assert.strictEqual(level11ShapeChecks.mainFlag, 'FF', 'Expected Level 11 main flag tile');
+assert.strictEqual(level11ShapeChecks.hiddenReturnPipe, 'PT', 'Expected Level 11 hidden area return pipe top');
+assert.strictEqual(level11ShapeChecks.hiddenEntryPipe, 'PT', 'Expected Level 11 hidden area entry pipe top');
+assert(level11ShapeChecks.hasMainPiranhaPipe, 'Expected Level 11 piranha pipe in main area');
+assert(level11ShapeChecks.hasMainEntryPipe, 'Expected Level 11 hidden-area entry pipe in main area');
+
+const level11SecretChecks = run(
+  ctx,
+  `(() => {
+    const main = buildLevel11Main();
+    const hidden = buildLevel11Hidden();
+    const mainSecrets = Object.entries(Q_CONTENTS_L11_MAIN).every(([k]) => {
+      const [c, r] = k.split(',').map(Number);
+      return main[r][c] === 'Q';
+    });
+    const hiddenSecrets = Object.entries(Q_CONTENTS_L11_HIDDEN).every(([k]) => {
+      const [c, r] = k.split(',').map(Number);
+      return hidden[r][c] === 'Q';
+    });
+    return {
+      mainSecrets,
+      hiddenSecrets,
+      mainHasFlower: Object.values(Q_CONTENTS_L11_MAIN).includes('flower'),
+      mainHas1Up: Object.values(Q_CONTENTS_L11_MAIN).includes('1up'),
+      hiddenHasMushroom: Object.values(Q_CONTENTS_L11_HIDDEN).includes('mushroom')
+    };
+  })()`
+);
+assert(level11SecretChecks.mainSecrets, 'Expected Level 11 main secret map to match Q-block tiles');
+assert(level11SecretChecks.hiddenSecrets, 'Expected Level 11 hidden secret map to match Q-block tiles');
+assert(level11SecretChecks.mainHasFlower, 'Expected Level 11 main to include fire-flower block');
+assert(level11SecretChecks.mainHas1Up, 'Expected Level 11 main to include hidden 1-up block');
+assert(level11SecretChecks.hiddenHasMushroom, 'Expected Level 11 hidden area to include mushroom reward');
+
 const transitionChecks = run(
   ctx,
   `(() => {
@@ -203,6 +268,52 @@ assert.strictEqual(transitionChecks.returnPiranha, 75 * 16 + 8, 'Expected piranh
 assert.strictEqual(transitionChecks.lockAfterEnter, 45, 'Expected pipeTransitionLock=45 after entering hidden area');
 assert.strictEqual(transitionChecks.lockAfterExit, 45, 'Expected pipeTransitionLock=45 after exiting hidden area');
 assert(transitionChecks.returnCol >= 120 && transitionChecks.returnCol <= 122, 'Expected return spawn to be on top of main-area entry pipe (cols 120-121)');
+
+const level11TransitionChecks = run(
+  ctx,
+  `(() => {
+    currentLevel = 11;
+    resetLevel();
+    const spawnOnSolid = isSolid(Math.floor((mario.x + mario.w / 2) / TILE), Math.floor((mario.y + mario.h) / TILE));
+    const startArea = currentArea;
+    const startPiranha = piranha ? piranha.pipeX : null;
+    enterLevel11HiddenArea();
+    const hiddenArea = currentArea;
+    const hiddenPiranha = piranha;
+    const hiddenMusic = getMusicTrack();
+    const lockAfterEnter = pipeTransitionLock;
+    exitLevel11HiddenArea();
+    const lockAfterExit = pipeTransitionLock;
+    const returnCol = Math.floor((mario.x + mario.w / 2) / TILE);
+    const returnFeetRow = Math.floor((mario.y + mario.h) / TILE);
+    return {
+      spawnOnSolid,
+      startArea,
+      hiddenArea,
+      startPiranha,
+      hiddenPiranha: hiddenPiranha === null,
+      hiddenMusic,
+      lockAfterEnter,
+      lockAfterExit,
+      returnArea: currentArea,
+      returnCol,
+      returnSpawnOnSolid: isSolid(returnCol, returnFeetRow),
+      returnPiranha: piranha ? piranha.pipeX : null
+    };
+  })()`
+);
+assert(level11TransitionChecks.spawnOnSolid, 'Expected Level 11 spawn not to softlock in air/pit');
+assert.strictEqual(level11TransitionChecks.startArea, 'main', 'Expected Level 11 reset to start in main area');
+assert.strictEqual(level11TransitionChecks.hiddenArea, 'hidden', 'Expected Level 11 hidden transition to switch area');
+assert.strictEqual(level11TransitionChecks.startPiranha, 86 * 16 + 8, 'Expected main-area piranha at Level 11 pipe');
+assert(level11TransitionChecks.hiddenPiranha, 'Expected no piranha in Level 11 hidden area');
+assert.strictEqual(level11TransitionChecks.hiddenMusic, 'underground', 'Expected Level 11 hidden area to use underground track');
+assert.strictEqual(level11TransitionChecks.returnArea, 'main', 'Expected Level 11 return pipe to switch back to main area');
+assert(level11TransitionChecks.returnSpawnOnSolid, 'Expected Level 11 hidden-area return to place Mario on solid pipe top');
+assert.strictEqual(level11TransitionChecks.returnPiranha, 86 * 16 + 8, 'Expected Level 11 piranha restored when returning to main area');
+assert.strictEqual(level11TransitionChecks.lockAfterEnter, 45, 'Expected pipeTransitionLock=45 after entering Level 11 hidden area');
+assert.strictEqual(level11TransitionChecks.lockAfterExit, 45, 'Expected pipeTransitionLock=45 after exiting Level 11 hidden area');
+assert(level11TransitionChecks.returnCol >= 120 && level11TransitionChecks.returnCol <= 122, 'Expected Level 11 return spawn to be on top of main-area entry pipe (cols 120-121)');
 
 const powerRetentionChecks = run(
   ctx,
@@ -294,6 +405,108 @@ assert.strictEqual(piranhaChecks.nearState, 'hidden', 'Expected piranha to stay 
 assert.strictEqual(piranhaChecks.farState, 'rising', 'Expected piranha to rise when Mario is far');
 assert.strictEqual(piranhaChecks.damageCalls, 1, 'Expected piranha contact to damage Mario');
 
+const level11EnemyChecks = run(
+  ctx,
+  `(() => {
+    currentLevel = 11;
+    resetLevel(false);
+    const mainEnemies = enemies.map(e => e.type);
+    const mainGoombas = mainEnemies.filter(t => t === 'goomba').length;
+    const mainKoopas = mainEnemies.filter(t => t === 'koopa').length;
+    const mainWingedKoopas = mainEnemies.filter(t => t === 'winged_koopa').length;
+    const mainLaunchers = mainEnemies.filter(t => t === 'bullet_launcher').length;
+    const mainHammerBros = mainEnemies.filter(t => t === 'hammer_bro').length;
+    const mainHasPiranha = !!piranha;
+    const hammerBroBoss = enemies.find(e => e.type === 'hammer_bro');
+
+    enterLevel11HiddenArea();
+    const hiddenEnemies = enemies.map(e => e.type);
+    const hiddenGoombas = hiddenEnemies.filter(t => t === 'goomba').length;
+    const hiddenKoopas = hiddenEnemies.filter(t => t === 'koopa').length;
+    const hiddenHasPiranha = !!piranha;
+
+    return {
+      mainGoombas,
+      mainKoopas,
+      mainWingedKoopas,
+      mainLaunchers,
+      mainHammerBros,
+      mainHammerBroCol: hammerBroBoss ? Math.floor(hammerBroBoss.x / TILE) : null,
+      mainHammerBroRow: hammerBroBoss ? Math.floor((hammerBroBoss.y + hammerBroBoss.h) / TILE) : null,
+      mainHasPiranha,
+      hiddenGoombas,
+      hiddenKoopas,
+      hiddenHasPiranha
+    };
+  })()`
+);
+assert(level11EnemyChecks.mainGoombas > 0, 'Expected Level 11 main area to spawn goombas');
+assert(level11EnemyChecks.mainKoopas > 0, 'Expected Level 11 main area to spawn koopas');
+assert(level11EnemyChecks.mainWingedKoopas > 0, 'Expected Level 11 main area to spawn winged koopas');
+assert(level11EnemyChecks.mainLaunchers > 0, 'Expected Level 11 main area to spawn Bullet Bill launchers');
+assert(level11EnemyChecks.mainHammerBros > 0, 'Expected Level 11 main area to spawn Hammer Bro boss');
+assert.strictEqual(level11EnemyChecks.mainHammerBroCol, 142, 'Expected Level 11 Hammer Bro boss at mid-level col 142');
+assert.strictEqual(level11EnemyChecks.mainHammerBroRow, 10, 'Expected Level 11 Hammer Bro boss to stand on row 10 lane');
+assert(level11EnemyChecks.mainHasPiranha, 'Expected Level 11 main area to configure piranha');
+assert(level11EnemyChecks.hiddenGoombas > 0, 'Expected Level 11 hidden area to spawn goombas');
+assert(level11EnemyChecks.hiddenKoopas > 0, 'Expected Level 11 hidden area to spawn koopas');
+assert.strictEqual(level11EnemyChecks.hiddenHasPiranha, false, 'Expected Level 11 hidden area to not configure piranha');
+
+const level11ClampAndSpawnChecks = run(
+  ctx,
+  `(() => {
+    currentLevel = 12;
+    resetLevel(false);
+    const clampedLevel = currentLevel;
+    const spawnCol = Math.floor((mario.x + mario.w / 2) / TILE);
+    const spawnRow = Math.floor((mario.y + mario.h) / TILE);
+    const spawnOverlap = enemies.some(e => e.state !== 'dead' && rectsOverlap(mario.x, mario.y, mario.w, mario.h, e.x, e.y, e.w, e.h));
+
+    currentLevel = 10;
+    resetLevel(false);
+    const unaffectedLevel = currentLevel;
+
+    currentLevel = 11;
+    resetLevel(false);
+    const hasFlower = Object.values(Q_CONTENTS_L11_MAIN).includes('flower');
+    const hasMushroom = Object.values(Q_CONTENTS_L11_MAIN).includes('mushroom') || Object.values(Q_CONTENTS_L11_HIDDEN).includes('mushroom');
+    const has1Up = Object.values(Q_CONTENTS_L11_MAIN).includes('1up');
+
+    return {
+      clampedLevel,
+      unaffectedLevel,
+      spawnCol,
+      spawnRow,
+      spawnOnSolid: isSolid(spawnCol, spawnRow),
+      spawnOverlap,
+      hasFlower,
+      hasMushroom,
+      has1Up
+    };
+  })()`
+);
+assert.strictEqual(level11ClampAndSpawnChecks.clampedLevel, 11, 'Expected level clamp to force level 12 down to level 11');
+assert.strictEqual(level11ClampAndSpawnChecks.unaffectedLevel, 10, 'Expected level 10 to remain unchanged by clamp');
+assert(level11ClampAndSpawnChecks.spawnOnSolid, 'Expected Level 11 spawn point to be on solid ground');
+assert.strictEqual(level11ClampAndSpawnChecks.spawnOverlap, false, 'Expected Level 11 spawn point to be clear of enemy overlap');
+assert(level11ClampAndSpawnChecks.hasFlower, 'Expected Level 11 powerups to include Fire Flower');
+assert(level11ClampAndSpawnChecks.hasMushroom, 'Expected Level 11 powerups to include Super Mushroom');
+assert(level11ClampAndSpawnChecks.has1Up, 'Expected Level 11 powerups to include hidden 1-up');
+
+const level11AssetChecks = (() => {
+  const required = [
+    'levels/level_11.json',
+    'assets/level11/sky_fortress.png',
+    'assets/level11/winged_koopa.png',
+    'assets/level11/bullet_bill_variant.png',
+    'assets/level11/fortress_door.png',
+  ];
+  return required.map(path => ({ path, exists: fs.existsSync(path) }));
+})();
+for (const entry of level11AssetChecks) {
+  assert(entry.exists, `Expected required Level 11 file to exist: ${entry.path}`);
+}
+
 // ============================================================
 // POWER-UP MECHANICS — separate context that loads items.js + mario.js
 // ============================================================
@@ -377,6 +590,20 @@ assert.strictEqual(collectFlowerChecks.fromSuperForm,    'fire', 'collectItem(fi
 assert.strictEqual(collectFlowerChecks.fromSuperH,       24,     'collectItem(fireflower): super h stays 24');
 assert.strictEqual(collectFlowerChecks.fromSuperYDelta,  0,      'collectItem(fireflower): super y unchanged (already tall)');
 assert.strictEqual(collectFlowerChecks.fromFireForm,     'fire', 'collectItem(fireflower): fire stays fire');
+
+const collect1UpChecks = run(
+  ctxPow,
+  `(() => {
+    currentLevel = 11;
+    resetLevel();
+    const livesBefore = lives;
+    collectItem({ type: '1up' });
+    return {
+      livesDelta: lives - livesBefore
+    };
+  })()`
+);
+assert.strictEqual(collect1UpChecks.livesDelta, 1, 'collectItem(1up): expected +1 life');
 
 // ---- collectItem: star ----
 const collectStarChecks = run(ctxPow, `(() => {

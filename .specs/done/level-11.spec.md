@@ -1,0 +1,5 @@
+FILE: js/level.js, js/constants.js, js/enemies.js, js/renderer.js, js/tiles.js
+CONTEXT: NES-style level addition
+TASK: Implement Level 11 with classic NES Mario design: standard platform layout, stairs, hidden 1-up block, fire flower, multiple enemy types (goomba, koopa, piranha plant), and pipe-based secret area. Level should faithfully recreate the platforming flows and secrets of an NES Mario late-game level. Update level registry/constants/enemy spawns. Render new tile/area graphics if needed.
+EXPECTED BEHAVIOR: Mario can traverse Level 11, encounter NES-accurate enemies/obstacles, access platform stairs, discover secrets, and enter/exit optional pipe area. Level completion triggers win flag.
+TESTS: test.js — test full run-through, all enemies/obstacles spawn as expected, secret/pipe logic works, and level is completable.

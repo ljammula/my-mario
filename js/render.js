@@ -336,11 +336,72 @@ function drawKoopa(ctx, enemy) {
   ctx.fillRect(x + w - 5*s, y + h - 4*s, 5*s, 4*s);
 }
 
+function drawWingedKoopa(ctx, enemy) {
+  drawKoopa(ctx, enemy);
+  const x = wx(enemy.x);
+  const y = wy(enemy.y);
+  const s = SCALE;
+  const flap = Math.floor(Date.now() / 120) % 2;
+  const wingY = flap === 0 ? y + 6 * s : y + 3 * s;
+  ctx.fillStyle = '#F2F2F2';
+  ctx.fillRect(x - 3 * s, wingY, 3 * s, 6 * s);
+  ctx.fillRect(x + enemy.w * s, wingY, 3 * s, 6 * s);
+}
+
+function drawBulletLauncher(ctx, enemy) {
+  const x = wx(enemy.x);
+  const y = wy(enemy.y);
+  const s = SCALE;
+  ctx.fillStyle = '#202020';
+  ctx.fillRect(x, y, enemy.w * s, enemy.h * s);
+  ctx.fillStyle = '#4A4A4A';
+  ctx.fillRect(x + 2 * s, y + 2 * s, enemy.w * s - 4 * s, enemy.h * s - 4 * s);
+  ctx.fillStyle = '#666666';
+  ctx.fillRect(x + 4 * s, y + 6 * s, enemy.w * s - 8 * s, 3 * s);
+}
+
+function drawBulletBill(ctx, enemy) {
+  const x = wx(enemy.x);
+  const y = wy(enemy.y);
+  const s = SCALE;
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(x, y, enemy.w * s, enemy.h * s);
+  ctx.fillStyle = '#E6E6E6';
+  ctx.fillRect(x + 3 * s, y + 2 * s, 3 * s, 3 * s);
+  ctx.fillStyle = '#A0A0A0';
+  ctx.fillRect(x + enemy.w * s - 3 * s, y + 3 * s, 3 * s, 4 * s);
+}
+
+function drawHammerBro(ctx, enemy) {
+  const x = wx(enemy.x);
+  const y = wy(enemy.y);
+  const s = SCALE;
+  ctx.fillStyle = '#2E8B57';
+  ctx.fillRect(x + 2 * s, y + 2 * s, 10 * s, 10 * s);
+  ctx.fillStyle = '#CFA77A';
+  ctx.fillRect(x + 3 * s, y + 5 * s, 8 * s, 6 * s);
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(x + 5 * s, y + 6 * s, 2 * s, 2 * s);
+  ctx.fillRect(x + 8 * s, y + 6 * s, 2 * s, 2 * s);
+  ctx.fillStyle = '#1E5A38';
+  ctx.fillRect(x + 1 * s, y + 12 * s, 12 * s, 10 * s);
+}
+
+function drawHammerProjectile(ctx, enemy) {
+  const x = wx(enemy.x);
+  const y = wy(enemy.y);
+  const s = SCALE;
+  ctx.fillStyle = '#B0B0B0';
+  ctx.fillRect(x + 1 * s, y, 6 * s, 2 * s);
+  ctx.fillRect(x + 3 * s, y + 2 * s, 2 * s, 6 * s);
+}
+
 function drawMushroom(ctx, item) {
   const x = wx(item.x);
   const y = wy(item.y);
   const s = SCALE;
-  ctx.fillStyle = '#CC0000';
+  const capColor = item.type === '1up' ? '#2EB82E' : '#CC0000';
+  ctx.fillStyle = capColor;
   ctx.beginPath();
   ctx.arc(x + 7*s, y + 5*s, 7*s, Math.PI, 0);
   ctx.fill();
@@ -481,6 +542,8 @@ function drawSky(ctx) {
     ctx.fillStyle = '#1A0B3C'; // volcanic deep purple
   } else if (currentLevel === 9) {
     ctx.fillStyle = '#8B6914'; // sky citadel golden-brown
+  } else if (currentLevel === 11) {
+    ctx.fillStyle = '#A6D9FF'; // sky fortress daytime
   } else {
     ctx.fillStyle = '#5C94FC';
   }
@@ -516,7 +579,7 @@ function drawLevelSelectScreen(ctx) {
 
   const themes = [
     'OVERWORLD','UNDERGROUND','ATHLETIC','FOREST','CASTLE',
-    'STORM','DUNGEON','VOLCANIC','CITADEL','FORTRESS',
+    'STORM','DUNGEON','VOLCANIC','CITADEL','FORTRESS','SKY FORTRESS',
   ];
   const cols = 5;
   const boxW = 88, boxH = 52, gapX = 8, gapY = 10;
@@ -644,7 +707,7 @@ function render(ctx) {
         }
         for (const item of items) {
           if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
-          if (item.type === 'mushroom')        drawMushroom(ctx, item);
+          if (item.type === 'mushroom' || item.type === '1up') drawMushroom(ctx, item);
           else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
           else if (item.type === 'star')       drawStar(ctx, item);
           else if (item.type === 'coinpopup')  drawCoinPopup(ctx, item);
@@ -653,8 +716,13 @@ function render(ctx) {
         for (const enemy of enemies) {
           if (!enemy.active || enemy.state === 'dead') continue;
           if (enemy.x + enemy.w < cameraX || enemy.x > cameraX + LOGICAL_W) continue;
-          if (enemy.type === 'goomba')     drawGoomba(ctx, enemy);
-          else if (enemy.type === 'koopa') drawKoopa(ctx, enemy);
+          if (enemy.type === 'goomba')              drawGoomba(ctx, enemy);
+          else if (enemy.type === 'koopa')          drawKoopa(ctx, enemy);
+          else if (enemy.type === 'winged_koopa')   drawWingedKoopa(ctx, enemy);
+          else if (enemy.type === 'bullet_launcher') drawBulletLauncher(ctx, enemy);
+          else if (enemy.type === 'bullet_bill')    drawBulletBill(ctx, enemy);
+          else if (enemy.type === 'hammer_bro')     drawHammerBro(ctx, enemy);
+          else if (enemy.type === 'hammer_projectile') drawHammerProjectile(ctx, enemy);
         }
         drawPiranha(ctx);
         if (mario) drawMario(ctx);
@@ -698,7 +766,7 @@ function render(ctx) {
   // Items
   for (const item of items) {
     if (item.x + 16 < cameraX || item.x > cameraX + LOGICAL_W) continue;
-    if (item.type === 'mushroom')   drawMushroom(ctx, item);
+    if (item.type === 'mushroom' || item.type === '1up') drawMushroom(ctx, item);
     else if (item.type === 'fireflower' || item.type === 'bomb') drawFireFlower(ctx, item);
     else if (item.type === 'star')  drawStar(ctx, item);
     else if (item.type === 'coinpopup') drawCoinPopup(ctx, item);
@@ -713,8 +781,13 @@ function render(ctx) {
   for (const enemy of enemies) {
     if (!enemy.active || enemy.state === 'dead') continue;
     if (enemy.x + enemy.w < cameraX || enemy.x > cameraX + LOGICAL_W) continue;
-    if (enemy.type === 'goomba')     drawGoomba(ctx, enemy);
-    else if (enemy.type === 'koopa') drawKoopa(ctx, enemy);
+    if (enemy.type === 'goomba')              drawGoomba(ctx, enemy);
+    else if (enemy.type === 'koopa')          drawKoopa(ctx, enemy);
+    else if (enemy.type === 'winged_koopa')   drawWingedKoopa(ctx, enemy);
+    else if (enemy.type === 'bullet_launcher') drawBulletLauncher(ctx, enemy);
+    else if (enemy.type === 'bullet_bill')    drawBulletBill(ctx, enemy);
+    else if (enemy.type === 'hammer_bro')     drawHammerBro(ctx, enemy);
+    else if (enemy.type === 'hammer_projectile') drawHammerProjectile(ctx, enemy);
   }
 
   drawPiranha(ctx);

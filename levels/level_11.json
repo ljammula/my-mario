@@ -1,0 +1,55 @@
+{
+  "id": 11,
+  "name": "Sky Fortress",
+  "theme": "sky_fortress",
+  "background": "assets/level11/sky_fortress.png",
+  "spawn": {
+    "x": 48,
+    "y": 192,
+    "safe_clearance_tiles": 10
+  },
+  "sections": [
+    {
+      "name": "Outer Ramparts",
+      "orientation": "horizontal",
+      "range": [0, 83],
+      "features": ["cloud_lifts", "falling_floor_bricks", "timed_cannons"]
+    },
+    {
+      "name": "Cannon Traverse",
+      "orientation": "horizontal",
+      "range": [84, 146],
+      "features": ["winged_koopas", "bullet_bill_launchers", "hidden_pipe_entry"]
+    },
+    {
+      "name": "Maze Bastion",
+      "orientation": "vertical+horizontal",
+      "range": [147, 197],
+      "features": ["hammer_bro_boss", "maze_gates", "vertical_climb"]
+    }
+  ],
+  "enemies": [
+    "goomba",
+    "koopa_troopa",
+    "winged_koopa",
+    "bullet_bill",
+    "hammer_bro"
+  ],
+  "powerups": [
+    "super_mushroom",
+    "fire_flower",
+    "1up_hidden"
+  ],
+  "obstacles": [
+    "timed_cannons",
+    "moving_platforms",
+    "falling_floor_segments",
+    "cloud_lifts",
+    "maze_section"
+  ],
+  "goal": {
+    "type": "fortress_flag_door",
+    "x": 210,
+    "y": 4
+  }
+}

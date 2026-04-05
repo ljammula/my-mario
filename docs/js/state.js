@@ -95,12 +95,78 @@ function createEnemyKoopa(col, row, opts = {}) {
   };
 }
 
+function createEnemyWingedKoopa(col, row, opts = {}) {
+  const h = 24;
+  const speed = opts.speed || 1.15;
+  return {
+    type: 'winged_koopa',
+    x: col * TILE,
+    y: row * TILE - h,
+    vx: opts.vx ?? -speed,
+    vy: 0,
+    w: 14, h,
+    state: 'walk',
+    stateTimer: 0,
+    active: false,
+    edgeAware: true,
+    damageOnTouch: true,
+    wingHopTimer: 0,
+  };
+}
+
+function createEnemyHammerBro(col, row, opts = {}) {
+  const h = 24;
+  return {
+    type: 'hammer_bro',
+    x: col * TILE,
+    y: row * TILE - h,
+    vx: opts.vx ?? 0.8,
+    vy: 0,
+    w: 14, h,
+    state: 'walk',
+    stateTimer: 0,
+    active: false,
+    edgeAware: true,
+    damageOnTouch: true,
+    throwTimer: 0,
+    jumpTimer: 0,
+  };
+}
+
+function createEnemyBulletLauncher(col, row, opts = {}) {
+  return {
+    type: 'bullet_launcher',
+    x: col * TILE,
+    y: row * TILE,
+    vx: 0,
+    vy: 0,
+    w: 16,
+    h: 32,
+    state: 'idle',
+    active: false,
+    damageOnTouch: false,
+    shootTimer: 0,
+    shootInterval: opts.shootInterval ?? 120,
+  };
+}
+
+function clampLevelNumber(level) {
+  return Math.max(1, Math.min(MAX_LEVEL, level));
+}
+
 function getLevelAreaData() {
+  currentLevel = clampLevelNumber(currentLevel);
+  selectedLevel = clampLevelNumber(selectedLevel);
+
   if (currentLevel === 1) {
     return { grid: buildLevel(), qContents: Q_CONTENTS };
   }
   if (currentLevel === 2) {
     return { grid: buildLevel2(), qContents: Q_CONTENTS_L2 };
+  }
+  if (currentLevel === 3) {
+    if (currentArea === 'hidden') return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
+    return { grid: buildLevel3Main(), qContents: Q_CONTENTS_L3_MAIN };
   }
   if (currentLevel === 4) {
     return { grid: buildLevel4(), qContents: Q_CONTENTS_L4 };
@@ -123,10 +189,11 @@ function getLevelAreaData() {
   if (currentLevel === 10) {
     return { grid: buildLevel10(), qContents: Q_CONTENTS_L10 };
   }
-  if (currentArea === 'hidden') {
-    return { grid: buildLevel3Hidden(), qContents: Q_CONTENTS_L3_HIDDEN };
+  if (currentLevel === 11) {
+    if (currentArea === 'hidden') return { grid: buildLevel11Hidden(), qContents: Q_CONTENTS_L11_HIDDEN };
+    return { grid: buildLevel11Main(), qContents: Q_CONTENTS_L11_MAIN };
   }
-  return { grid: buildLevel3Main(), qContents: Q_CONTENTS_L3_MAIN };
+  return { grid: buildLevel(), qContents: Q_CONTENTS };
 }
 
 function getMusicTrack() {
@@ -183,6 +250,28 @@ function spawnEnemies() {
     enemies.push(createEnemyKoopa(120,12,{speed:1.4}));
     enemies.push(createEnemyKoopa(145,10,{edgeAware:true,speed:1.4}));
     enemies.push(createEnemyKoopa(172,12,{speed:1.4}));
+    return;
+  }
+
+  if (currentLevel === 11) {
+    if (currentArea === 'hidden') {
+      enemies.push(createEnemyGoomba(96, 13, { speed: 1.3 }));
+      enemies.push(createEnemyKoopa(148, 13, { speed: 1.3 }));
+      return;
+    }
+
+    const goombas = [
+      [14,13],[22,13],[48,13],[64,13],[90,13],[108,13],[132,13],[176,13],[188,13],
+    ];
+    for (const [c, r] of goombas) enemies.push(createEnemyGoomba(c, r, { speed: 1.35 }));
+    enemies.push(createEnemyKoopa(38, 13, { speed: 1.35 }));
+    enemies.push(createEnemyKoopa(116, 9, { edgeAware: true, speed: 1.35 }));
+    enemies.push(createEnemyWingedKoopa(72, 10, { speed: 1.25 }));
+    enemies.push(createEnemyWingedKoopa(156, 8, { speed: 1.3 }));
+    enemies.push(createEnemyHammerBro(142, 10, { vx: 0.95 })); // mid-level boss gatekeeper
+    enemies.push(createEnemyBulletLauncher(74, 10, { shootInterval: 130 }));
+    enemies.push(createEnemyBulletLauncher(116, 9, { shootInterval: 110 }));
+    enemies.push(createEnemyBulletLauncher(168, 10, { shootInterval: 95 }));
     return;
   }
 
@@ -357,6 +446,21 @@ function configurePiranha() {
     return;
   }
 
+  if (currentLevel === 11 && currentArea === 'main') {
+    piranha = {
+      x: 86 * TILE + 4,
+      y: 10 * TILE,
+      w: 8, h: 16,
+      timer: 0,
+      state: 'hidden',
+      visible: false,
+      baseY:   10 * TILE,
+      targetY:  8 * TILE,
+      pipeX: 86 * TILE + 8,
+    };
+    return;
+  }
+
   if (currentLevel === 9) {
     piranha = {
       x: 130 * TILE + 4,
@@ -421,7 +525,7 @@ function configurePiranha() {
 }
 
 function enforceLateWorldSpawnSafety() {
-  if (currentArea !== 'main' || currentLevel < 6 || currentLevel > 10 || !mario) return;
+  if (currentArea !== 'main' || currentLevel < 6 || currentLevel > 11 || !mario) return;
 
   const startSafeDistance = TILE * 10;
   const safeRightX = mario.x + mario.w + startSafeDistance;
@@ -465,6 +569,35 @@ function enterLevel3HiddenArea() {
 function exitLevel3HiddenArea() {
   // Exit on top of the main-area entry pipe so the player never respawns over the pit.
   switchLevel3Area('main', 121 * TILE + 2, 10 * TILE);
+}
+
+function switchLevel11Area(nextArea, spawnX, spawnY) {
+  if (currentLevel !== 11) return;
+  currentArea = nextArea;
+  applyCurrentAreaData();
+
+  mario.x = spawnX;
+  mario.y = spawnY + (16 - mario.h);
+  mario.vx = 0;
+  mario.vy = 0;
+  mario.grounded = false;
+  mario.onFlagpole = false;
+  mario.won = false;
+
+  items = [];
+  fireballs = [];
+  pipeTransitionLock = 45;
+  if (typeof snapCameraToMario === 'function') snapCameraToMario(false);
+
+  AudioSystem.playMusic(getMusicTrack());
+}
+
+function enterLevel11HiddenArea() {
+  switchLevel11Area('hidden', 9 * TILE + 2, 10 * TILE);
+}
+
+function exitLevel11HiddenArea() {
+  switchLevel11Area('main', 121 * TILE + 2, 10 * TILE);
 }
 
 function getMarioPowerState() {
