@@ -26,7 +26,7 @@
       image-rendering: crisp-edges;
       display: block;
       max-width: 100%;
-      max-height: calc(100vh - 136px);
+      max-height: calc(100vh - 130px);
       width: auto;
       height: auto;
     }
@@ -36,7 +36,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 136px;
+      height: 130px;
       padding: 8px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
       background: rgba(0, 0, 0, 0.35);
       z-index: 100;
@@ -84,15 +84,15 @@
     }
     #dpad {
       display: flex;
-      flex-direction: row;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
     }
     #btn-left,
     #btn-right {
-      width: 110px;
-      height: 110px;
-      font-size: 42px;
-      border-radius: 16px;
+      width: 90px;
+      height: 58px;
+      font-size: 28px;
+      border-radius: 12px;
     }
     #center-controls {
       display: flex;
@@ -102,17 +102,17 @@
     }
     #action-buttons {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
     }
     #btn-a {
       background: rgba(20, 120, 20, 0.75);
       border-color: rgba(100, 220, 100, 0.7);
-      width: 100px;
-      height: 100px;
-      font-size: 28px;
-      border-radius: 16px;
+      width: 90px;
+      height: 58px;
+      font-size: 22px;
+      border-radius: 12px;
     }
     #btn-a.pressed {
       background: rgba(40, 180, 40, 0.9);
@@ -120,10 +120,10 @@
     #btn-b {
       background: rgba(160, 20, 20, 0.75);
       border-color: rgba(220, 100, 100, 0.7);
-      width: 86px;
-      height: 86px;
-      font-size: 24px;
-      border-radius: 16px;
+      width: 90px;
+      height: 58px;
+      font-size: 22px;
+      border-radius: 12px;
     }
     #btn-b.pressed {
       background: rgba(220, 40, 40, 0.9);
@@ -150,8 +150,8 @@
       <button class="touch-btn" id="btn-start" aria-label="Start/Pause">START</button>
     </div>
     <div id="action-buttons">
-      <button class="touch-btn" id="btn-b" aria-label="Run/Fire">B</button>
       <button class="touch-btn" id="btn-a" aria-label="Jump">A</button>
+      <button class="touch-btn" id="btn-b" aria-label="Run/Fire">B</button>
     </div>
   </div>
   <!-- Load order matters: each file depends only on files above it -->
