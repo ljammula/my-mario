@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const REPORT_DIR = path.join(ROOT_DIR, 'artifacts');
 const REPORT_PATH = path.join(REPORT_DIR, 'headless-playthrough-report.json');
-const TRANSITION_TARGET = 10;
+const MIN_TRANSITION_TARGET = 11;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -94,8 +94,9 @@ async function runPlaythrough() {
       () => typeof update === 'function' && typeof resetLevel === 'function' && typeof STATE === 'object'
     );
 
-    const transitions = await page.evaluate((targetTransitions) => {
+    const { maxLevel, transitions } = await page.evaluate((minimumTransitionTarget) => {
       const nextLevel = (level) => (level % MAX_LEVEL) + 1;
+      const targetTransitions = Math.max(minimumTransitionTarget, MAX_LEVEL);
       const records = [];
 
       // Keep run deterministic and side-effect free in headless mode.
@@ -154,24 +155,51 @@ async function runPlaythrough() {
         });
       }
 
-      return records;
-    }, TRANSITION_TARGET);
+      return {
+        maxLevel: MAX_LEVEL,
+        transitions: records,
+      };
+    }, MIN_TRANSITION_TARGET);
 
     const mismatches = transitions.filter((item) => {
       return item.afterLevel !== item.expectedAfterLevel || !item.reachedWinState || item.finalState !== 'INTRO';
     });
+    const levelsCompleted = [...new Set(transitions.map((item) => item.beforeLevel))].sort((a, b) => a - b);
+    const wraparoundTransition = transitions.find((item) => item.beforeLevel === maxLevel);
+    const missingLevels = Array.from({ length: maxLevel }, (_, index) => index + 1).filter(
+      (level) => !levelsCompleted.includes(level)
+    );
+    const coverageIssues = [];
+
+    if (transitions.length < maxLevel) {
+      coverageIssues.push(`Expected at least ${maxLevel} transitions, got ${transitions.length}`);
+    }
+    if (missingLevels.length > 0) {
+      coverageIssues.push(`Missing completed levels: ${missingLevels.join(', ')}`);
+    }
+    if (!wraparoundTransition) {
+      coverageIssues.push(`Did not observe Level ${maxLevel} completion`);
+    } else if (wraparoundTransition.afterLevel !== 1) {
+      coverageIssues.push(`Expected Level ${maxLevel} to wrap to Level 1, got Level ${wraparoundTransition.afterLevel}`);
+    }
 
     const result = {
-      transitionTarget: TRANSITION_TARGET,
+      transitionTarget: Math.max(MIN_TRANSITION_TARGET, maxLevel, transitions.length),
+      maxLevel,
       transitions,
+      levelsCompleted,
+      missingLevels,
+      wraparoundTransition,
       mismatchCount: mismatches.length,
       mismatches,
+      coverageIssueCount: coverageIssues.length,
+      coverageIssues,
       pageErrorCount: pageErrors.length,
       pageErrors,
       consoleErrorCount: consoleErrors.length,
       consoleErrors,
       consoleLogCount: consoleLog.length,
-      passed: mismatches.length === 0 && pageErrors.length === 0 && consoleErrors.length === 0,
+      passed: mismatches.length === 0 && coverageIssues.length === 0 && pageErrors.length === 0 && consoleErrors.length === 0,
     };
 
     fs.mkdirSync(REPORT_DIR, { recursive: true });
@@ -183,7 +211,7 @@ async function runPlaythrough() {
       return;
     }
 
-    console.log(`Playthrough passed (${TRANSITION_TARGET} transitions). Report: ${REPORT_PATH}`);
+    console.log(`Playthrough passed (${transitions.length} transitions, wrapped Level ${maxLevel} to Level 1). Report: ${REPORT_PATH}`);
   } finally {
     await context.close();
     await browser.close();
@@ -194,7 +222,7 @@ async function runPlaythrough() {
 runPlaythrough().catch((error) => {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
   const failure = {
-    transitionTarget: TRANSITION_TARGET,
+    transitionTarget: MIN_TRANSITION_TARGET,
     fatalError: {
       message: error.message,
       stack: error.stack || null,

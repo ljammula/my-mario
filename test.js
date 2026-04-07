@@ -760,45 +760,36 @@ assert.strictEqual(resetFormChecks.fireForm,  'fire',  'resetLevel(true): fire f
 assert.strictEqual(resetFormChecks.fireH,     24,      'resetLevel(true): fire h=24');
 assert.strictEqual(resetFormChecks.fireY,     184,     'resetLevel(true): fire spawn y=184 (feet aligned)');
 
-// ---- Level advancement (win) preserves power across all three level transitions ----
+// ---- Level advancement (win) preserves power across the full MAX_LEVEL cycle, including 11 → 1 ----
 const levelAdvanceChecks = run(ctxPow, `(() => {
-  // Level 1 → 2 with super form
-  currentLevel = 1; resetLevel();
-  mario.form = 'super'; mario.h = 24;
-  currentLevel = (currentLevel % 3) + 1;  // → 2
-  resetLevel(true);
-  const l1to2Form = mario.form; const l1to2H = mario.h;
+  const superChecks = [];
+  for (let level = 1; level <= MAX_LEVEL; level++) {
+    currentLevel = level; resetLevel();
+    mario.form = 'super'; mario.h = 24;
+    currentLevel = (currentLevel % MAX_LEVEL) + 1;
+    resetLevel(true);
+    superChecks.push({ from: level, to: currentLevel, form: mario.form, h: mario.h });
+  }
 
-  // Level 2 → 3 with fire form
-  currentLevel = 2; resetLevel();
-  mario.form = 'fire'; mario.h = 24;
-  currentLevel = (currentLevel % 3) + 1;  // → 3
+  currentLevel = MAX_LEVEL; resetLevel();
+  mario.form = 'fire'; mario.h = 24; mario.starFrames = 250;
+  currentLevel = (currentLevel % MAX_LEVEL) + 1;
   resetLevel(true);
-  const l2to3Form = mario.form; const l2to3H = mario.h;
+  const wrapFireCheck = { to: currentLevel, form: mario.form, h: mario.h, starFrames: mario.starFrames };
 
-  // Level 3 → 1 with super form
-  currentLevel = 3; resetLevel();
-  mario.form = 'super'; mario.h = 24;
-  currentLevel = (currentLevel % 3) + 1;  // → 1
-  resetLevel(true);
-  const l3to1Form = mario.form; const l3to1H = mario.h;
-
-  // Level 2 → 3 with star frames
-  currentLevel = 2; resetLevel();
-  mario.form = 'fire'; mario.starFrames = 250;
-  currentLevel = (currentLevel % 3) + 1;  // → 3
-  resetLevel(true);
-  const l2to3Star = mario.starFrames;
-
-  return { l1to2Form, l1to2H, l2to3Form, l2to3H, l3to1Form, l3to1H, l2to3Star };
+  return { superChecks, wrapFireCheck };
 })()`);
-assert.strictEqual(levelAdvanceChecks.l1to2Form, 'super', 'level 1→2 win: super form preserved');
-assert.strictEqual(levelAdvanceChecks.l1to2H,    24,      'level 1→2 win: super h=24 preserved');
-assert.strictEqual(levelAdvanceChecks.l2to3Form, 'fire',  'level 2→3 win: fire form preserved');
-assert.strictEqual(levelAdvanceChecks.l2to3H,    24,      'level 2→3 win: fire h=24 preserved');
-assert.strictEqual(levelAdvanceChecks.l3to1Form, 'super', 'level 3→1 win: super form preserved');
-assert.strictEqual(levelAdvanceChecks.l3to1H,    24,      'level 3→1 win: super h=24 preserved');
-assert.strictEqual(levelAdvanceChecks.l2to3Star, 250,     'level 2→3 win: star frames preserved');
+assert.strictEqual(levelAdvanceChecks.superChecks.length, 11, 'Expected power-preservation checks for all 11 level transitions');
+for (const entry of levelAdvanceChecks.superChecks) {
+  const expectedTo = (entry.from % 11) + 1;
+  assert.strictEqual(entry.to, expectedTo, `level ${entry.from}→${expectedTo} win: expected next level`);
+  assert.strictEqual(entry.form, 'super', `level ${entry.from}→${expectedTo} win: super form preserved`);
+  assert.strictEqual(entry.h, 24, `level ${entry.from}→${expectedTo} win: super h=24 preserved`);
+}
+assert.strictEqual(levelAdvanceChecks.wrapFireCheck.to, 1, 'level 11→1 win: expected wrap to level 1');
+assert.strictEqual(levelAdvanceChecks.wrapFireCheck.form, 'fire', 'level 11→1 win: fire form preserved');
+assert.strictEqual(levelAdvanceChecks.wrapFireCheck.h, 24, 'level 11→1 win: fire h=24 preserved');
+assert.strictEqual(levelAdvanceChecks.wrapFireCheck.starFrames, 250, 'level 11→1 win: star frames preserved');
 
 const koopaTopStompChecks = run(
   ctx,
