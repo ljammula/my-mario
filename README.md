@@ -141,3 +141,6 @@ npm run playthrough # headless 10-transition browser playthrough + error capture
 ```
 
 Automated Playwright tests cover: module loading, PLAYING state, Mario movement, pause/resume, Q-block bonk, mushroom spawn, goomba AI, fireball, damage chain, death by pit, camera follow, tile helpers.
+
+
+Dummy README commit for 2026-04-16
