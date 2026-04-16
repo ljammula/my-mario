@@ -1,6 +1,14 @@
 # My Mario
 
-A Super Mario Bros (1985) World 1-1 browser clone — vanilla JS + HTML5 Canvas, no frameworks, no build step.
+A Super Mario Bros (1985) browser clone — vanilla JS + HTML5 Canvas, no frameworks, no build step.
+
+**Playable Levels:**
+- World 1-1 (complete, NES-faithful)
+- World 1-2 (underground, in development; classic NES visuals, new powers and double-size Mario)
+
+**Mario Upgrades (In Progress, Level 1-2):**
+- Double-size Mario (complete)
+- Super Jump, Dash/Speed Boost, Coin Magnet, Invincibility/Star, Always-On Shooting (exclusive to Level 1-2, agent-parallel development)
 
 NES-accurate physics, pixel-art sprites drawn via Canvas 2D, procedural Web Audio synthesis. Playable on desktop and mobile. Deploys to GitHub Pages from `/docs`.
 
